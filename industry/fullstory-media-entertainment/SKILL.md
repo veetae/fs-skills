@@ -59,6 +59,48 @@ If your platform serves children under 13:
 - ❌ Do NOT capture any data about children's viewing habits
 - ✅ Only capture data for verified adult accounts
 
+### Accessibility Feature Tracking
+
+Media platforms must track accessibility feature usage to ensure compliance with WCAG/ADA requirements and improve experiences for all users:
+
+| Accessibility Feature | Track? | Why |
+|----------------------|--------|-----|
+| **Closed captions/subtitles** | ✅ Yes | Engagement with CC content |
+| **Audio descriptions** | ✅ Yes | Usage rates, content coverage |
+| **Playback speed** | ✅ Yes | Accessibility and preference |
+| **Screen reader compatibility** | ⚠️ Consider | May need special implementation |
+| **Keyboard navigation** | ✅ Yes | Identifies non-mouse users |
+| **Font size/contrast settings** | ✅ Yes | Accessibility preference adoption |
+| **Disability status** | ❌ Never | Sensitive PII |
+
+```javascript
+// Track accessibility feature usage
+FS('trackEvent', {
+  name: 'accessibility_feature_enabled',
+  properties: {
+    feature: 'closed_captions',
+    language: 'en',
+    content_type: 'movie',
+    content_id: 'mov_12345',
+    first_time: true,   // Is this the first time this user enabled CC?
+    // Helps identify accessibility feature adoption and content gaps
+  }
+});
+
+// Track accessibility journey patterns
+FS('setProperties', {
+  type: 'user',
+  properties: {
+    uses_captions: true,
+    uses_audio_descriptions: false,
+    preferred_playback_speed: 1.0,
+    // Never track WHY they use these features, only THAT they do
+  }
+});
+```
+
+> **Important**: Track accessibility feature usage to improve coverage and experience, but NEVER ask or infer why users need these features.
+
 ---
 
 ## Implementation Architecture
@@ -1031,7 +1073,7 @@ function onCancellationSaved(offer) {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping media clients with FullStory:
 

@@ -37,6 +37,34 @@ B2B SaaS applications have unique characteristics for session analytics:
 
 ---
 
+## Recommended: Private by Default for Enterprise SaaS
+
+For SaaS applications handling customer data, **Private by Default mode is recommended**:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  SaaS: Consider Private by Default                               │
+│                                                                 │
+│  • Multi-tenant = high data sensitivity                         │
+│  • Customer data displayed in your UI → mask by default         │
+│  • Selectively unmask your UI (buttons, nav, feature names)     │
+│  • Contact Fullstory Support to enable                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+| SaaS Type | Private by Default? | Reason |
+|-----------|---------------------|--------|
+| **CRM/Sales tools** | ⚠️ Recommended | Displays customer contact info |
+| **Project management** | ⚠️ Consider | User-generated content |
+| **Analytics dashboards** | ⚠️ Consider | Customer business data |
+| **Developer tools** | ✅ Highly recommended | Code, credentials, secrets |
+| **HR/Payroll** | ✅ Required | Employee PII |
+| **Collaboration tools** | ⚠️ Consider | Messages, documents |
+
+> **Reference**: [Fullstory Private by Default](https://help.fullstory.com/hc/en-us/articles/360044349073-Fullstory-Private-by-Default)
+
+---
+
 ## SaaS Privacy Considerations
 
 ### What Can Typically Be Captured
@@ -172,6 +200,59 @@ function onUserLogin(user, organization) {
   });
 }
 ```
+
+---
+
+## AI/ML Feature Tracking
+
+Modern SaaS applications increasingly use AI/ML features. Track these carefully:
+
+### What to Track for AI Features
+
+| AI Feature Type | Track | Don't Track |
+|-----------------|-------|-------------|
+| **AI assistants/copilots** | Feature activated, suggestions accepted/rejected | Actual suggestions or prompts containing user data |
+| **Smart recommendations** | Recommendation shown, clicked, dismissed | The recommended content itself (may contain customer data) |
+| **Automated workflows** | Automation triggered, completed, failed | Customer data processed by automation |
+| **Predictive analytics** | Feature viewed, exported | The predictions themselves |
+| **AI-generated content** | Generation requested, accepted, edited | The generated content |
+
+```javascript
+// Track AI feature usage without capturing customer data
+FS('trackEvent', {
+  name: 'ai_feature_interaction',
+  properties: {
+    feature_name: 'smart_compose',
+    interaction_type: 'suggestion_accepted',
+    context: 'email_compose',
+    suggestion_count: 3,
+    accepted_index: 1,
+    response_time_ms: 850,
+    // NEVER: The actual suggestion text, user prompt, or generated content
+  }
+});
+
+// Track AI feature adoption over time
+FS('trackEvent', {
+  name: 'ai_feature_first_use',
+  properties: {
+    feature_name: 'report_generator',
+    days_since_signup: 14,
+    user_role: 'analyst',
+    trial_or_paid: 'trial',
+    // Helps understand AI feature discovery patterns
+  }
+});
+```
+
+### AI Ethics Considerations
+
+| Consideration | Guidance |
+|---------------|----------|
+| **Bias auditing** | Track AI feature usage across segments to identify disparities |
+| **Transparency** | Log when AI made a decision vs user |
+| **Opt-out tracking** | Track users who disable AI features |
+| **Error rates** | Track AI failures without capturing the data that caused them |
 
 ---
 
@@ -959,7 +1040,7 @@ function getOrgSizeRange(employeeCount) {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping SaaS clients with FullStory:
 

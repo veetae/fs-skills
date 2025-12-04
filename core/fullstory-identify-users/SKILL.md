@@ -34,8 +34,45 @@ This skill covers implementation patterns, best practices, and common pitfalls f
 - **After Authentication Redirects**: Ensure identification persists across OAuth/SSO redirects
 
 ### User Identity vs Anonymous Sessions
-- **Anonymous Session**: Default state before `setIdentity` is called. User is tracked but not linked to your system.
+- **Anonymous Session**: Default state before `setIdentity` is called. User is tracked via the `fs_uid` first-party cookie but not linked to your system.
 - **Identified Session**: After `setIdentity`, the session is permanently linked to the provided `uid`.
+
+### How Identification Works (Cookie Behavior)
+
+Fullstory uses a **first-party cookie** (`fs_uid`) to track users across sessions.
+
+#### Why First-Party Cookies Matter
+
+| Aspect | First-Party (Fullstory) | Third-Party |
+|--------|-------------------------|-------------|
+| **Domain** | Set on YOUR domain (example.com) | Set on external domain (ads.tracker.com) |
+| **Browser blocking** | ✅ Not blocked by browsers or ad-blockers | ❌ Often blocked by default |
+| **Cross-site tracking** | ❌ Cannot track users across different sites | ✅ Can track across sites |
+| **Privacy** | ✅ Data stays within your domain context | ❌ Aggregates data across web |
+
+> **Key Benefit**: Because Fullstory uses first-party cookies on YOUR domain, user identity cannot be connected between multiple sites using Fullstory. Each site has its own separate `fs_uid` cookie - your customers' data is isolated to your site only.
+
+#### Cookie-Based Session Linking
+
+1. **Before identification**: The `fs_uid` cookie links all sessions from the same browser/device together (persists for 1 year unless deleted)
+2. **When `setIdentity` is called**: ALL previous anonymous sessions with that same `fs_uid` cookie are **retroactively merged** into the identified user
+3. **Cross-device linking**: If the same `uid` is used on different devices, all sessions across all devices are linked
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    Session Merging on Identification                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Day 1: Anonymous visit          fs_uid: abc123  → "Anonymous User"     │
+│  Day 3: Anonymous visit          fs_uid: abc123  → Same anonymous user  │
+│  Day 7: User logs in, setIdentity(uid: "user_456")                      │
+│         ↓                                                               │
+│  Result: ALL sessions (Day 1, 3, 7) now linked to "user_456"           │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+> **Important**: This means a user's entire journey from first visit through conversion can be tracked, even if they only identify on their 5th session.
+>
+> **Reference**: [Why Fullstory uses First-Party Cookies](https://help.fullstory.com/hc/en-us/articles/360020829513-Why-Fullstory-uses-First-Party-Cookies)
 
 ### Re-identification Behavior
 - **CRITICAL**: You cannot change a user's identity once assigned within a session
@@ -47,6 +84,31 @@ This skill covers implementation patterns, best practices, and common pitfalls f
 2. Call `setIdentity` **as early as possible** after authentication
 3. Include **meaningful properties** for searchability (displayName, email)
 4. Handle **logout properly** by calling anonymize
+
+### setIdentity vs setProperties (User)
+
+| Scenario | Use This API | Why |
+|----------|--------------|-----|
+| User logs in | `setIdentity` | Links session to user identity |
+| Initial user properties at login | `setIdentity` with `properties` | Convenient to include with identification |
+| Update user properties later | `setProperties` (type: 'user') | Don't re-identify just to update properties |
+| Properties for anonymous user | `setProperties` (type: 'user') | Works without identification! |
+
+> **Important**: The `properties` object in `setIdentity` is a convenience - you can include initial properties when identifying. However, for **updating** properties after identification or for **anonymous users**, use `setProperties` with `type: 'user'` instead. See the **fullstory-user-properties** skill for details.
+
+```javascript
+// At login - identify with initial properties
+FS('setIdentity', {
+  uid: user.id,
+  properties: { displayName: user.name, email: user.email, plan: user.plan }
+});
+
+// Later - user upgrades plan (DON'T re-identify!)
+FS('setProperties', {
+  type: 'user',
+  properties: { plan: 'enterprise', upgraded_at: new Date().toISOString() }
+});
+```
 
 ---
 
@@ -783,7 +845,7 @@ FS('setProperties', {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers implement User Identification:
 

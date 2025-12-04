@@ -54,6 +54,41 @@ Travel and hospitality have unique characteristics for session analytics:
 | Loyalty numbers | ⚠️ Consider | Mask | Could be used for account takeover |
 | TSA PreCheck / Known Traveler | ❌ Exclude | Exclude | Security sensitive |
 
+### TSA Secure Flight Requirements (US Airlines)
+
+For airlines operating in the US, TSA Secure Flight requirements mandate specific passenger data collection. **All Secure Flight data must be EXCLUDED**:
+
+| Secure Flight Data | Why Exclude |
+|--------------------|-------------|
+| **Full legal name** | Required for TSA matching |
+| **Date of birth** | Required for TSA matching |
+| **Gender** | Required for TSA matching |
+| **Redress Number** | DHS Traveler Redress Inquiry Program |
+| **Known Traveler Number** | TSA PreCheck / Global Entry |
+| **Passport information** | International travel verification |
+
+```html
+<!-- Travel: TSA Secure Flight data MUST be excluded -->
+<fieldset class="fs-exclude secure-flight-data">
+  <legend>Secure Flight Information (Required by TSA)</legend>
+  
+  <!-- ALL of this data must be excluded -->
+  <input name="legal_first_name" />
+  <input name="legal_middle_name" />
+  <input name="legal_last_name" />
+  <input name="date_of_birth" type="date" />
+  <select name="gender">
+    <option>Male</option>
+    <option>Female</option>
+    <option>Undisclosed</option>
+  </select>
+  <input name="redress_number" placeholder="Optional" />
+  <input name="known_traveler_number" placeholder="Optional" />
+</fieldset>
+```
+
+> **Important**: Track that the Secure Flight form was displayed and submitted (funnel step), but NEVER capture the actual data entered.
+
 ---
 
 ## Implementation Architecture
@@ -1088,7 +1123,7 @@ FS('trackEvent', {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping travel clients with FullStory:
 

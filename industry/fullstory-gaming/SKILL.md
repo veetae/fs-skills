@@ -1,7 +1,7 @@
 ---
-name: fullstory-gambling
+name: fullstory-gaming
 version: v2
-description: Industry-specific guide for implementing Fullstory in gambling, betting, and gaming applications. Covers regulatory requirements (responsible gambling, KYC/AML), privacy controls for sensitive betting data, deposit/withdrawal flows, player protection features, and self-exclusion compliance. Includes detailed examples for sportsbooks, casinos, poker, and lottery applications.
+description: Industry-specific guide for implementing Fullstory in gaming applications. Covers regulatory requirements (responsible gaming, KYC/AML), privacy controls for sensitive gaming data, deposit/withdrawal flows, player protection features, and self-exclusion compliance. Includes detailed examples for sportsbooks, casinos, poker, and lottery applications.
 related_skills:
   - fullstory-privacy-controls
   - fullstory-privacy-strategy
@@ -10,26 +10,26 @@ related_skills:
   - fullstory-analytics-events
 ---
 
-# Fullstory for Gambling & Gaming
+# Fullstory for Gaming
 
-> ⚠️ **LEGAL DISCLAIMER**: This guidance is for educational purposes only and does not constitute legal, compliance, or regulatory advice. Gambling regulations vary significantly by jurisdiction and are subject to strict licensing requirements. Always consult with your legal, compliance, and responsible gambling teams before implementing any data capture solution. Your organization is responsible for ensuring compliance with all applicable gaming regulations and licensing requirements.
+> ⚠️ **LEGAL DISCLAIMER**: This guidance is for educational purposes only and does not constitute legal, compliance, or regulatory advice. Gaming regulations vary significantly by jurisdiction and are subject to strict licensing requirements. Always consult with your legal, compliance, and responsible gaming teams before implementing any data capture solution. Your organization is responsible for ensuring compliance with all applicable gaming regulations and licensing requirements.
 
 ## Industry Overview
 
-Gambling and gaming platforms have unique requirements due to:
+Gaming platforms have unique requirements due to:
 
 - **Heavy regulation**: Jurisdiction-specific licensing requirements
-- **Responsible gambling**: Mandatory player protection features
+- **Responsible gaming**: Mandatory player protection features
 - **KYC/AML compliance**: Identity verification requirements
 - **Financial sensitivity**: Deposits, withdrawals, bet amounts
-- **Addiction concerns**: Behavior patterns may indicate problem gambling
+- **Addiction concerns**: Behavior patterns may indicate problem gaming
 - **Age verification**: Must ensure 18+/21+ compliance
 
-### Key Goals for Gambling Implementations
+### Key Goals for Gaming Implementations
 
 1. **Optimize conversion funnels** from registration to first bet/deposit
-2. **Improve user experience** across betting flows
-3. **Monitor responsible gambling features** (limits, timeouts, self-exclusion)
+2. **Improve user experience** across gaming flows
+3. **Monitor responsible gaming features** (limits, timeouts, self-exclusion)
 4. **Ensure compliance** with regulatory requirements
 5. **Reduce friction** in deposit/withdrawal processes
 6. **Understand player engagement** without enabling surveillance
@@ -42,38 +42,374 @@ Gambling and gaming platforms have unique requirements due to:
 
 | Jurisdiction | Key Regulations | FullStory Implications |
 |--------------|-----------------|------------------------|
-| **UK** | UKGC License Conditions | Responsible gambling tracking, self-exclusion |
+| **UK** | UKGC License Conditions | Responsible gaming tracking, self-exclusion |
 | **Malta** | MGA Requirements | Player protection, data localization |
 | **US (NJ, PA, etc.)** | State Gaming Commissions | KYC data handling, geolocation |
 | **EU** | GDPR + Local Gaming Laws | Consent, data minimization |
-| **Australia** | Interactive Gambling Act | Responsible gambling features |
+| **Australia** | Interactive Gaming Act | Responsible gaming features |
 
-### Data That MUST Be Handled Carefully
+### Fraud Detection and Prevention
 
-| Data Type | Sensitivity | Implementation |
-|-----------|-------------|----------------|
-| Identity documents | HIGH | Never capture images |
-| SSN/Tax ID | HIGH | fs-exclude |
-| Bank account details | HIGH | fs-exclude |
-| Card details | HIGH | fs-exclude (PCI) |
-| Bet amounts | MEDIUM | Consider ranges |
-| Win/loss amounts | HIGH | fs-exclude or ranges |
-| Deposit/withdrawal amounts | HIGH | fs-exclude or ranges |
-| Account balance | HIGH | fs-exclude |
-| Betting history | MEDIUM | Consider implications |
-| Self-exclusion status | HIGH | Never expose |
-| Responsible gambling limits | HIGH | Handle carefully |
-| Problem gambling indicators | HIGH | Never analyze in FS |
+Fullstory enables real-time detection of fraudulent behavior in gaming applications. In 2024 alone, gaming sites lost more than $1B to fraud, with rates rising 64% since 2022 ([Source](https://www.fullstory.com/blog/prevent-online-gambling-fraud/)).
+
+**Common Fraud Types to Detect:**
+
+| Fraud Type | Behavioral Signals | Fullstory Detection |
+|------------|-------------------|---------------------|
+| **Bonus Abuse** | Multiple accounts claiming welcome offers; VPN/TOR usage | Track signup patterns, browser fingerprints, IP inconsistencies |
+| **Multi-Accounting** | Same user operating multiple accounts to bypass limits | Session replay, behavioral fingerprinting |
+| **Gnoming** | Coordinated accounts manipulating outcomes | Cross-account behavior correlation |
+| **Bot-like Behavior** | Automated scripts placing bets | Interaction timing, mouse movements, click patterns |
+| **Chargeback Fraud** | Deposit → wager → dispute cycle | Payment flow tracking, dispute pattern analysis |
+| **Money Laundering** | Low-margin bets, rapid transactions across accounts | Transaction velocity, wagering pattern analysis |
+| **KYC/AML Evasion** | False documents, account cycling | Verification flow tracking, document upload patterns |
+
+```javascript
+// Track fraud risk indicators
+FS('trackEvent', {
+  name: 'fraud_signal_detected',
+  properties: {
+    signal_type: 'multi_account_indicator',
+    signal_source: 'behavioral',
+    risk_level: 'high',
+    session_id: sessionId,
+    indicators: [
+      'rapid_account_creation',
+      'bonus_claim_pattern',
+      'vpn_detected'
+    ],
+    // Fullstory captures mouse movements, timing, interaction patterns automatically
+  }
+});
+
+// Track KYC verification flow for fraud detection
+FS('trackEvent', {
+  name: 'kyc_verification_step',
+  properties: {
+    step: 'document_upload',
+    document_type: 'id_card',
+    attempt_number: 2,
+    time_on_step_seconds: 45,
+    previous_failures: 1,
+    // Track patterns: multiple failed attempts = potential fraud signal
+  }
+});
+```
+
+**Building Fraud Detection Dashboards:**
+
+```javascript
+// Track suspicious deposit patterns
+FS('trackEvent', {
+  name: 'deposit_pattern_analysis',
+  properties: {
+    deposit_amount: 500.00,
+    deposits_last_hour: 3,
+    deposits_last_24h: 8,
+    unique_payment_methods_24h: 4,
+    average_time_between_deposits_minutes: 12,
+    matches_bonus_abuse_pattern: true,
+  }
+});
+
+// Track unusual session behavior
+FS('trackEvent', {
+  name: 'session_anomaly',
+  properties: {
+    anomaly_type: 'rapid_navigation',
+    pages_per_minute: 45,
+    click_pattern: 'automated',
+    mouse_movement_score: 0.2,  // Low score = bot-like
+    time_to_first_bet_seconds: 3,
+  }
+});
+```
+
+> **Reference**: [Online Gaming Fraud Prevention](https://www.fullstory.com/blog/prevent-online-gambling-fraud/)
+
+---
+
+### High-Value Player Engagement
+
+Fullstory enables real-time identification and engagement of high-value players:
+
+```javascript
+// Track high-value player moments
+FS('trackEvent', {
+  name: 'high_value_moment',
+  properties: {
+    moment_type: 'big_win',
+    player_value_tier: 'vip',
+    session_duration_minutes: 45,
+    engagement_score: 'high',
+    eligible_for_reward: true,
+    reward_type: 'loyalty_bonus',
+  }
+});
+
+// Set high-value player properties
+FS('setProperties', {
+  type: 'user',
+  properties: {
+    player_value_tier: 'platinum',
+    lifetime_deposits_band: '$10k-$50k',
+    preferred_game_type: 'live_casino',
+    churn_risk_score: 'low',
+    last_vip_contact_days: 7,
+    eligible_promotions: ['reload_bonus', 'cashback'],
+  }
+});
+```
+
+> **Key Stat**: Casumo achieved 87% reduction in time to resolution using Fullstory for player experience issues ([Source](https://www.fullstory.com/industries/gaming/)).
+
+---
+
+### AI/ML Fairness Considerations
+
+Many gaming platforms use AI/ML for odds calculation, player risk assessment, and promotional targeting. Fullstory can help audit these systems for fairness:
+
+| AI/ML Application | What to Track | Privacy Note |
+|-------------------|---------------|--------------|
+| **Dynamic odds** | Odds displayed (not wager amounts) | Track changes, not player-specific |
+| **Bonus allocation** | Bonus offered (type, not amount) | Audit for fair distribution |
+| **Risk scoring** | Features shown/hidden | Never capture the score itself |
+| **Promotional targeting** | Promo impressions, clicks | Audit for bias patterns |
+| **Responsible gaming intervention** | Intervention shown | Never track individual triggers |
+
+```javascript
+// Track AI/ML feature distribution for fairness auditing
+FS('trackEvent', {
+  name: 'ai_feature_impression',
+  properties: {
+    feature_type: 'dynamic_promo',
+    variant_shown: 'B',
+    player_segment: 'standard',   // Generic segment only
+    // NEVER: AI risk scores, predicted behaviors, or individual targeting reasons
+  }
+});
+```
+
+> **Important**: Never capture AI/ML decision rationale that could reveal player profiling. Track what was shown, not why.
+
+### Data Handling by Purpose
+
+| Data Type | General UX Analytics | Compliance Monitoring | Notes |
+|-----------|---------------------|----------------------|-------|
+| Identity documents | ❌ Never | ❌ Never | Never capture images |
+| SSN/Tax ID | ❌ fs-exclude | ❌ fs-exclude | Government ID |
+| Bank account details | ❌ fs-exclude | ❌ fs-exclude | Financial security |
+| Card details | ❌ fs-exclude | ❌ fs-exclude | PCI compliance |
+| **Wager amounts** | ⚠️ Use bands | ✅ Capture for RG | Needed for responsible gaming |
+| **Win/loss amounts** | ⚠️ Use bands | ✅ Capture for RG | Pattern detection |
+| **Deposit amounts** | ⚠️ Use bands | ✅ Capture for RG | Velocity monitoring |
+| Account balance | ⚠️ Use bands | ⚠️ Consider | May aid pattern detection |
+| Gaming history | ⚠️ Consider | ✅ Track | Session patterns |
+| Self-exclusion status | ❌ Never expose | ⚠️ Internal only | Privacy sensitive |
+| Responsible gaming limits | ⚠️ Track changes | ✅ Track | Compliance requirement |
+| Intervention triggers | N/A | ✅ Track | Required for audit |
+
+> **Key Insight**: For **responsible gaming compliance**, capturing actual amounts is often **required** to identify at-risk players. Use bands for general UX analytics, actual values for compliance monitoring.
+
+### Responsible Gaming Monitoring with Fullstory
+
+**Regulatory requirements** (UKGC, MGA, US state commissions) mandate that operators monitor player behavior to identify and protect at-risk players. **Fullstory can serve as a powerful tool for responsible gaming compliance**, combining behavioral analytics with session replay for comprehensive player protection.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  FULLSTORY FOR RESPONSIBLE GAMING COMPLIANCE                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  What Fullstory enables:                                                     │
+│  ├── Behavioral pattern analysis across sessions                            │
+│  ├── Session replay for compliance review and audit                         │
+│  ├── Real-time event tracking for intervention triggers                     │
+│  ├── Segment creation for at-risk player identification                     │
+│  ├── Data export for regulatory reporting                                   │
+│  └── Cross-device journey tracking                                          │
+│                                                                             │
+│  Key capabilities:                                                           │
+│  • Track wagering patterns to identify escalating behavior                  │
+│  • Monitor session duration and frequency                                   │
+│  • Capture deposit velocity and amounts                                     │
+│  • Track responsible gaming feature engagement                              │
+│  • Create alerts based on behavioral thresholds                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Capturing Wagering Data for Compliance:**
+
+```javascript
+// Track wager events for responsible gaming monitoring
+FS('trackEvent', {
+  name: 'wager_placed',
+  properties: {
+    wager_amount: 50.00,              // Actual amount for compliance monitoring
+    wager_amount_band: '$25-$100',    // Band for general analytics
+    game_type: 'slots',
+    game_id: 'starburst',
+    currency: 'GBP',
+    session_wager_total: 150.00,      // Running total this session
+    session_wager_count: 5,           // Number of wagers this session
+    time_since_last_wager_seconds: 45,
+  }
+});
+
+// Track wins/losses for pattern analysis
+FS('trackEvent', {
+  name: 'wager_result',
+  properties: {
+    result: 'loss',                   // 'win' or 'loss'
+    amount: 50.00,                    // Amount won or lost
+    net_session_position: -75.00,    // Running P&L this session
+    consecutive_losses: 3,            // Pattern indicator
+    game_type: 'slots',
+  }
+});
+
+// Track deposit behavior
+FS('trackEvent', {
+  name: 'deposit_completed',
+  properties: {
+    deposit_amount: 100.00,
+    deposit_method: 'debit_card',
+    deposits_today: 2,
+    deposits_this_week: 5,
+    total_deposited_today: 200.00,
+    approaching_limit: true,          // Flag for compliance
+    limit_percentage_used: 80,
+  }
+});
+```
+
+**User Properties for Player Risk Monitoring:**
+
+```javascript
+// Set player profile properties for segmentation and monitoring
+FS('setProperties', {
+  type: 'user',
+  properties: {
+    // Responsible gaming profile
+    has_deposit_limit: true,
+    has_loss_limit: true,
+    has_session_limit: false,
+    reality_check_interval_minutes: 60,
+    
+    // Risk indicators (updated in real-time)
+    current_risk_tier: 'elevated',     // 'low', 'moderate', 'elevated', 'high'
+    days_since_last_rg_interaction: 14,
+    lifetime_deposit_total_band: '$1k-$5k',
+    
+    // Engagement patterns
+    avg_session_duration_minutes: 45,
+    sessions_per_week: 8,
+    preferred_game_category: 'slots',
+  }
+});
+```
+
+**Session-Level Monitoring:**
+
+```javascript
+// Page properties for session context
+FS('setProperties', {
+  type: 'page',
+  properties: {
+    pageName: 'Casino - Slots',
+    session_start_time: new Date().toISOString(),
+    session_wager_count: 0,
+    session_deposit_count: 0,
+    reality_check_due_at: '2024-01-15T15:30:00Z',
+  }
+});
+
+// Track reality check interactions
+FS('trackEvent', {
+  name: 'reality_check_displayed',
+  properties: {
+    session_duration_minutes: 60,
+    session_wagered: 250.00,
+    session_net_position: -75.00,
+    user_action: 'continue',          // 'continue', 'take_break', 'set_limit', 'quit'
+    time_to_respond_seconds: 8,
+  }
+});
+
+// Track responsible gaming tool usage
+FS('trackEvent', {
+  name: 'responsible_gaming_action',
+  properties: {
+    action: 'deposit_limit_set',
+    limit_type: 'daily',
+    limit_amount: 50.00,
+    previous_limit: 100.00,           // Track if reducing limits
+    self_initiated: true,             // vs triggered by intervention
+  }
+});
+```
+
+**Creating Compliance Segments in Fullstory:**
+
+| Segment | Criteria | Action |
+|---------|----------|--------|
+| **High Risk - Chasing Losses** | 5+ consecutive losses AND increased wager amounts | Immediate review |
+| **Deposit Velocity Concern** | 3+ deposits in 24hrs | Compliance flag |
+| **Extended Session** | Session > 3hrs without break | Trigger reality check review |
+| **Approaching Limits** | >80% of any limit used | Proactive outreach |
+| **Limit Reduction** | Player reduced their own limits | Positive indicator, monitor |
+| **Declined Deposit** | Deposit blocked by limit | Review if multiple attempts |
+
+**Intervention Tracking:**
+
+```javascript
+// Track when interventions are triggered and their outcomes
+FS('trackEvent', {
+  name: 'intervention_triggered',
+  properties: {
+    intervention_type: 'mandatory_break',
+    trigger_reason: 'session_duration_exceeded',
+    session_duration_minutes: 180,
+    session_wagered: 500.00,
+    player_risk_tier: 'elevated',
+  }
+});
+
+FS('trackEvent', {
+  name: 'intervention_outcome',
+  properties: {
+    intervention_type: 'mandatory_break',
+    outcome: 'completed',             // 'completed', 'extended', 'self_excluded'
+    break_duration_minutes: 15,
+    returned_to_play: true,
+    time_until_return_minutes: 45,
+  }
+});
+```
+
+**Best Practices for Compliance Use:**
+
+| Practice | Implementation |
+|----------|----------------|
+| **Data retention** | Configure Fullstory retention to meet regulatory requirements |
+| **Access controls** | Limit access to wagering data to compliance team |
+| **Audit trail** | Use Data Export for regulatory reporting |
+| **Real-time monitoring** | Set up alerts for high-risk patterns |
+| **Session replay** | Use for manual review of flagged sessions |
+| **Cross-reference** | Combine with CRM data for complete player view |
+
+> **Important**: When using Fullstory for compliance, ensure your data retention, access controls, and export capabilities meet the specific requirements of your gaming license jurisdictions.
+
 
 ---
 
 ## Implementation Architecture
 
-### Privacy Zones for Gambling
+### Privacy Zones for Gaming
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    GAMBLING APPLICATION                          │
+│                     GAMING APPLICATION                           │
 ├─────────────────────────────────────────────────────────────────┤
 │  FULLY VISIBLE (fs-unmask)                                       │
 │  • Sports events, odds display                                   │
@@ -101,15 +437,158 @@ Gambling and gaming platforms have unique requirements due to:
 │  • SSN/Tax ID                                                   │
 │  • Bank account details                                         │
 │  • Self-exclusion settings                                      │
-│  • Responsible gambling limits                                  │
-│  • Problem gambling questionnaires                              │
+│  • Responsible gaming limits                                  │
+│  • Problem gaming questionnaires                              │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+### Game Iframe Semantic Decoration
+
+Most gaming operators embed third-party game provider iframes (e.g., Evolution, NetEnt, Pragmatic Play). Since Fullstory cannot capture content inside cross-origin iframes, you must decorate the **wrapper elements** to track which games players interact with.
+
+```html
+<!-- IMPORTANT: Decorate the WRAPPER around the iframe, not the iframe itself -->
+
+<!-- Slot Game Launcher -->
+<div 
+  class="game-container"
+  data-fs-element="GameLauncher"
+  data-fs-properties-schema='{
+    "data-game-id": {"type": "str", "name": "gameId"},
+    "data-game-name": {"type": "str", "name": "gameName"},
+    "data-game-provider": {"type": "str", "name": "gameProvider"},
+    "data-game-category": {"type": "str", "name": "gameCategory"},
+    "data-game-rtp": {"type": "real", "name": "gameRTP"}
+  }'
+  data-game-id="starburst_xxxtreme"
+  data-game-name="Starburst XXXtreme"
+  data-game-provider="netent"
+  data-game-category="slots"
+  data-game-rtp="96.26"
+>
+  <!-- Game iframe (content not captured, but wrapper interactions are) -->
+  <iframe 
+    src="https://game-provider.com/launch/starburst_xxxtreme" 
+    title="Starburst XXXtreme"
+  ></iframe>
+  
+  <!-- Game controls OUTSIDE iframe (captured) -->
+  <div class="game-controls fs-unmask">
+    <button data-fs-element="FullscreenButton">Fullscreen</button>
+    <button data-fs-element="FavoriteButton">Add to Favorites</button>
+    <button data-fs-element="ExitGameButton">Exit Game</button>
+  </div>
+</div>
+```
+
+**Track game launch events:**
+
+```javascript
+// Track when a game is launched
+function launchGame(game) {
+  FS('trackEvent', {
+    name: 'game_launched',
+    properties: {
+      game_id: game.id,
+      game_name: game.name,
+      game_provider: game.provider,       // "netent", "evolution", "pragmatic"
+      game_category: game.category,       // "slots", "table_games", "live_casino"
+      game_subcategory: game.subcategory, // "megaways", "jackpot", "classic"
+      game_rtp: game.rtp,                 // 96.26
+      launch_source: game.source,         // "lobby", "favorites", "search", "recommendation"
+      is_demo_mode: game.isDemoMode,
+    }
+  });
+}
+
+// Track game session duration (when game is closed)
+function exitGame(game, sessionStart) {
+  FS('trackEvent', {
+    name: 'game_session_ended',
+    properties: {
+      game_id: game.id,
+      game_name: game.name,
+      game_provider: game.provider,
+      session_duration_seconds: Math.floor((Date.now() - sessionStart) / 1000),
+      exit_reason: game.exitReason,       // "user_exit", "session_timeout", "error"
+    }
+  });
+}
+```
+
+**Page properties for game sessions:**
+
+```javascript
+// Set page context when game is active
+FS('setProperties', {
+  type: 'page',
+  properties: {
+    pageName: 'Game - Slots',
+    active_game_id: 'starburst_xxxtreme',
+    active_game_name: 'Starburst XXXtreme',
+    active_game_provider: 'netent',
+    active_game_category: 'slots',
+    game_session_start: new Date().toISOString(),
+  }
+});
+```
+
+**Game lobby decoration:**
+
+```html
+<!-- Game Lobby with semantic decoration -->
+<div 
+  class="game-lobby"
+  data-fs-element="GameLobby"
+>
+  <!-- Category filters (captured) -->
+  <nav class="category-filters fs-unmask">
+    <button 
+      data-fs-element="CategoryFilter"
+      data-fs-properties-schema='{"data-category": {"type": "str", "name": "filterCategory"}}'
+      data-category="slots"
+    >Slots</button>
+    <button 
+      data-fs-element="CategoryFilter"
+      data-category="live-casino"
+    >Live Casino</button>
+    <button 
+      data-fs-element="CategoryFilter"
+      data-category="table-games"
+    >Table Games</button>
+  </nav>
+
+  <!-- Game grid -->
+  <div class="game-grid">
+    <!-- Each game tile is decorated -->
+    <article 
+      class="game-tile"
+      data-fs-element="GameTile"
+      data-fs-properties-schema='{
+        "data-game-id": {"type": "str", "name": "gameId"},
+        "data-game-provider": {"type": "str", "name": "provider"}
+      }'
+      data-game-id="starburst_xxxtreme"
+      data-game-provider="netent"
+    >
+      <img src="/thumbnails/starburst.jpg" alt="Starburst XXXtreme" />
+      <h3 class="fs-unmask">Starburst XXXtreme</h3>
+      <span class="provider fs-unmask">NetEnt</span>
+      <button data-fs-element="PlayButton">Play Now</button>
+      <button data-fs-element="DemoButton">Try Demo</button>
+    </article>
+    
+    <!-- More game tiles... -->
+  </div>
+</div>
+```
+
+> **Key Insight**: While Fullstory cannot see inside third-party game iframes, you can capture ALL context about which games are played by decorating the wrapper elements and firing events on launch/exit.
 
 ### User Identification Pattern
 
 ```javascript
-// Gambling: Use player ID, never use PII
+// Gaming: Use player ID, never use PII
 function onLogin(player) {
   FS('setIdentity', {
     uid: player.playerId,  // e.g., "PLR-789456"
@@ -143,7 +622,7 @@ function onLogin(player) {
       email_opted_in: player.emailOptIn,
       
       // NEVER include:
-      // balance, lifetime_deposits, lifetime_losses, betting_history
+      // balance, lifetime_deposits, lifetime_losses, gaming_history
     }
   });
 }
@@ -213,8 +692,8 @@ function onLogin(player) {
       I am 21+ and agree to the Terms of Service
     </label>
     <label>
-      <input type="checkbox" name="gambling_aware" />
-      I acknowledge the responsible gambling information
+      <input type="checkbox" name="gaming_aware" />
+      I acknowledge the responsible gaming information
     </label>
   </section>
   
@@ -252,7 +731,7 @@ function onRegistrationComplete(player) {
 }
 ```
 
-### Sports Betting - Event Browsing
+### Sports Gaming - Event Browsing
 
 ```html
 <!-- Sportsbook - Event List -->
@@ -617,14 +1096,14 @@ function onDepositFailed(error) {
 }
 ```
 
-### Responsible Gambling Features
+### Responsible Gaming Features
 
 This is extremely sensitive - track usage patterns for UX but NEVER track specific limits or self-exclusion details.
 
 ```html
-<!-- Responsible Gambling Page - VERY SENSITIVE -->
-<div class="responsible-gambling">
-  <h1 class="fs-unmask">Responsible Gambling Tools</h1>
+<!-- Responsible Gaming Page - VERY SENSITIVE -->
+<div class="responsible-gaming">
+  <h1 class="fs-unmask">Responsible Gaming Tools</h1>
   
   <!-- Feature overview - visible -->
   <div class="rg-tools-overview fs-unmask">
@@ -683,28 +1162,28 @@ This is extremely sensitive - track usage patterns for UX but NEVER track specif
   <!-- Help resources - visible (important for users) -->
   <section class="help-resources fs-unmask">
     <h2>Get Help</h2>
-    <a href="tel:1-800-522-4700">National Problem Gambling Helpline</a>
+    <a href="tel:1-800-522-4700">National Problem Gaming Helpline</a>
     <a href="https://www.gamblersanonymous.org">Gamblers Anonymous</a>
   </section>
 </div>
 ```
 
 ```javascript
-// Responsible gambling page tracking - BE VERY CAREFUL
+// Responsible gaming page tracking - BE VERY CAREFUL
 FS('setProperties', {
   type: 'page',
   properties: {
-    page_type: 'responsible_gambling',
+    page_type: 'responsible_gaming',
     // Only track that they visited, not what they set
   }
 });
 
 // Track only that RG features were accessed (for UX research on feature discoverability)
-// NEVER track specific limits, self-exclusion requests, or problem gambling indicators
+// NEVER track specific limits, self-exclusion requests, or problem gaming indicators
 
 function onRGPageView() {
   FS('trackEvent', {
-    name: 'responsible_gambling_page_viewed',
+    name: 'responsible_gaming_page_viewed',
     properties: {
       referrer_type: getReferrerType()  // "menu", "footer", "prompt"
       // NEVER: what limits they have, what they're changing
@@ -751,7 +1230,7 @@ function onHelpResourceClick(resource) {
   <!-- Transaction list - EXCLUDE amounts -->
   <div class="transaction-list fs-exclude">
     <!-- All transaction details are sensitive:
-         - Amounts reveal gambling activity
+         - Amounts reveal gaming activity
          - Win/loss patterns
          - Deposit frequency
     -->
@@ -783,14 +1262,14 @@ function onHelpResourceClick(resource) {
 
 ### What NOT to Analyze in FullStory
 
-Some analyses could facilitate problem gambling identification or discrimination:
+Some analyses could facilitate problem gaming identification or discrimination:
 
 ❌ **Never analyze or segment by:**
 - Session duration patterns (could indicate addiction)
 - Loss chasing behavior
 - Deposit frequency
-- Late-night gambling patterns
-- Betting amount trends
+- Late-night gaming patterns
+- Wagering amount trends
 - Win/loss ratios
 
 ✅ **OK to analyze:**
@@ -835,7 +1314,7 @@ FS('trackEvent', {
 
 ---
 
-## Common Gambling Patterns
+## Common Gaming Patterns
 
 ### Amount Range Helper
 
@@ -861,27 +1340,27 @@ function getSessionDurationBand(minutes) {
   if (minutes < 30) return '15-30min';
   if (minutes < 60) return '30-60min';
   if (minutes < 120) return '1-2hours';
-  return '2hours+';  // Don't get more specific - could indicate problem gambling
+  return '2hours+';  // Don't get more specific - could indicate problem gaming
 }
 ```
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
-When helping gambling clients with FullStory:
+When helping gaming clients with FullStory:
 
 1. **Regulatory awareness**: Different jurisdictions have different requirements
 2. **Financial data is highly sensitive**: Always exclude or use ranges
-3. **Responsible gambling features**: NEVER analyze specific limit settings or self-exclusion
+3. **Responsible gaming features**: NEVER analyze specific limit settings or self-exclusion
 4. **Behavior patterns**: Be careful about what patterns you enable - could indicate addiction
 5. **KYC/AML data**: ID documents, SSN must never be captured
 6. **Public data is OK**: Odds, game names, sports events are fine
 
-### Questions to Ask Gambling Clients
+### Questions to Ask Gaming Clients
 
 1. "What jurisdictions do you operate in?"
-2. "How do you handle responsible gambling feature tracking?"
+2. "How do you handle responsible gaming feature tracking?"
 3. "Is your session replay access audited?"
 4. "How do you ensure self-exclusion data isn't exposed?"
 5. "Are ID verification screens properly excluded?"
@@ -890,17 +1369,17 @@ When helping gambling clients with FullStory:
 
 - Tracking specific bet/deposit amounts
 - Analyzing session duration patterns
-- Segmenting users by gambling frequency
+- Segmenting users by gaming frequency
 - Capturing ID verification screens
 - Exposing self-exclusion or limit settings
 - Tracking reality check dismissals
 
 ### Ethical Considerations
 
-Remember: FullStory in gambling should help improve UX, NOT enable:
-- Problem gambling identification for marketing
+Remember: FullStory in gaming should help improve UX, NOT enable:
+- Problem gaming identification for marketing
 - Surveillance of player behavior
-- Discrimination based on gambling patterns
+- Discrimination based on gaming patterns
 
 The goal is better UX for all players, not optimizing revenue extraction.
 
@@ -908,12 +1387,22 @@ The goal is better UX for all players, not optimizing revenue extraction.
 
 ## REFERENCE LINKS
 
-- **UKGC Guidance**: https://www.gamblingcommission.gov.uk/
-- **Responsible Gambling Council**: https://www.responsiblegambling.org/
+### Fullstory Gaming Resources
+- **Fullstory Gaming Industry Page**: https://www.fullstory.com/industries/gaming/
+- **Responsible Gaming Compliance**: https://www.fullstory.com/blog/identify-high-risk-gambling-behavior/
+- **Fraud Prevention Guide**: https://www.fullstory.com/blog/prevent-online-gambling-fraud/
+- **High-Value Player Retention**: https://www.fullstory.com/blog/high-value-player-retention-igaming/
+
+### Regulatory Resources
+- **UK Gambling Commission (UKGC)**: https://www.gamblingcommission.gov.uk/
+- **Malta Gaming Authority**: https://www.mga.org.mt/
+- **Responsible Gaming Council**: https://www.responsiblegaming.org/
+
+### Related Skills
 - **FullStory Privacy Controls**: ../core/fullstory-privacy-controls/SKILL.md
 - **FullStory Privacy Strategy**: ../meta/fullstory-privacy-strategy/SKILL.md
 
 ---
 
-*This skill document is specific to gambling and gaming implementations. Always consult your compliance team and legal counsel regarding jurisdiction-specific requirements.*
+*This skill document is specific to gaming implementations. Always consult your compliance team and legal counsel regarding jurisdiction-specific requirements.*
 

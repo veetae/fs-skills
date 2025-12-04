@@ -9,7 +9,7 @@ related_skills:
   - fullstory-capture-control
   - fullstory-banking
   - fullstory-healthcare
-  - fullstory-gambling
+  - fullstory-gaming
   - fullstory-ecommerce
 ---
 
@@ -19,7 +19,9 @@ related_skills:
 
 Fullstory's Privacy Controls allow developers to control what data is captured and sent to Fullstory servers. This is implemented through CSS classes that define how elements and their content are treated during session recording.
 
-**Critical Understanding**: Privacy controls operate at the DOM level in the user's browser. Excluded and masked content **never leaves the user's device** - it is processed locally before any data is sent to Fullstory.
+**Critical Understanding**: Privacy controls operate at the DOM level in the user's browser:
+- **Excluded content**: Never leaves the user's device at all - completely ignored
+- **Masked content**: The **actual text never leaves the device**. It is replaced locally (in the browser) with a wireframe approximation before anything is sent to Fullstory's servers. Fullstory only receives the wireframed placeholder, never the original text.
 
 ## Core Concepts
 
@@ -28,7 +30,7 @@ Fullstory's Privacy Controls allow developers to control what data is captured a
 | Mode | CSS Class | Data Leaves Device | Events Captured | Best For |
 |------|-----------|-------------------|-----------------|----------|
 | **Exclude** | `.fs-exclude` | ❌ Nothing | ❌ No | Regulated data, secrets |
-| **Mask** | `.fs-mask` | ⚠️ Structure only, no text | ✅ Yes | PII, names, emails |
+| **Mask** | `.fs-mask` | ⚠️ Structure only (text **never** sent - wireframed locally) | ✅ Yes | PII, names, emails |
 | **Unmask** | `.fs-unmask` | ✅ Everything | ✅ Yes | Public content |
 
 ### Privacy Hierarchy (Most → Least Restrictive)
@@ -42,7 +44,9 @@ Fullstory's Privacy Controls allow developers to control what data is captured a
 │  - Nothing sent to Fullstory                         │
 ├─────────────────────────────────────────────────────┤
 │  MASK (.fs-mask)                                     │
-│  - Text replaced with wireframe placeholders         │
+│  - Actual text NEVER leaves device                   │
+│  - Replaced locally with wireframe approximation     │
+│  - Only wireframe sent to Fullstory servers          │
 │  - Element structure sent (knows what was clicked)   │
 │  - Events captured                                   │
 │  - Text appears as "████████" in replay              │
@@ -68,6 +72,113 @@ Fullstory automatically excludes:
 - `input[type=password]` - All password fields
 - `[autocomplete^=cc-]` - Credit card fields (number, CVV, expiry)
 - `input[type=hidden]` - Hidden inputs
+
+---
+
+## Private by Default Mode
+
+Fullstory offers a **Private by Default** mode that inverts the default capture behavior for maximum privacy protection.
+
+### How Private by Default Works
+
+| Mode | Default Behavior | When to Use |
+|------|------------------|-------------|
+| **Standard** | Everything captured (unmask) unless excluded/masked | Low-sensitivity applications (marketing sites) |
+| **Private by Default** | Everything masked unless explicitly unmasked | Sensitive applications (banking, healthcare, SaaS) |
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  STANDARD MODE (Default)                                                 │
+│  └── All content visible → Add fs-mask/fs-exclude to protect            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  PRIVATE BY DEFAULT MODE                                                 │
+│  └── All content masked → Add fs-unmask to reveal safe content          │
+│                                                                         │
+│  With Private by Default enabled:                                        │
+│  • No text is captured unless explicitly unmasked                       │
+│  • Session replay shows wireframes everywhere                           │
+│  • Zero risk of accidentally capturing sensitive data                   │
+│  • Selectively unmask navigation, buttons, product info                 │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Enabling Private by Default
+
+Private by Default is enabled via Fullstory Support or during account setup:
+
+1. **New accounts**: Choose "Private by Default" during onboarding wizard
+2. **Existing accounts**: Contact [Fullstory Support](https://help.fullstory.com/hc/en-us/requests/new) to enable
+
+> **⚠️ Warning for existing accounts**: Enabling Private by Default may break existing segments, event funnels, or Conversions that rely on text elements. Coordinate with your analytics team before enabling.
+
+### When to Use Private by Default
+
+| Scenario | Recommendation |
+|----------|---------------|
+| **Healthcare applications** | ✅ Highly recommended |
+| **Banking/financial services** | ✅ Highly recommended |
+| **Applications with heavy PII** | ✅ Highly recommended |
+| **Enterprise SaaS (multi-tenant)** | ⚠️ Recommended |
+| **E-commerce (product pages)** | ⚠️ Consider - may need extensive unmasking |
+| **Marketing/content sites** | ❌ Probably overkill |
+
+### Unmasking Strategy for Private by Default
+
+When Private by Default is enabled, use `.fs-unmask` to reveal safe content:
+
+```html
+<!-- Private by Default: Must explicitly unmask safe content -->
+<body>  <!-- Everything masked by default -->
+  
+  <!-- Unmask navigation (no PII) -->
+  <nav class="fs-unmask">
+    <a href="/products">Products</a>
+    <a href="/pricing">Pricing</a>
+    <a href="/about">About</a>
+  </nav>
+  
+  <!-- Unmask product info (no PII) -->
+  <div class="product-card fs-unmask">
+    <h2>Product Name</h2>
+    <p class="price">$99.99</p>
+    <button>Add to Cart</button>
+  </div>
+  
+  <!-- Customer info stays masked (default) -->
+  <div class="customer-details">
+    <p>Name: John Smith</p>  <!-- Masked by default ✓ -->
+    <p>Email: john@example.com</p>  <!-- Masked by default ✓ -->
+  </div>
+  
+  <!-- Payment still excluded (always) -->
+  <div class="payment-form fs-exclude">
+    <input type="text" name="cardNumber" />
+  </div>
+</body>
+```
+
+### Using CSS Selectors for Bulk Unmasking
+
+Instead of adding classes to every element, use CSS selector rules in Settings:
+
+```css
+/* Unmask all navigation links */
+nav a
+
+/* Unmask all product titles */
+.product-card h2, .product-card h3
+
+/* Unmask all prices */
+.price, [data-price], .product-price
+
+/* Unmask all buttons */
+button, .btn, [role="button"]
+
+/* Unmask error messages */
+.error-message, .alert, [role="alert"]
+```
+
+> **Reference**: [Fullstory Private by Default](https://help.fullstory.com/hc/en-us/articles/360044349073-Fullstory-Private-by-Default)
 
 ---
 
@@ -620,8 +731,8 @@ function processPayment(cardNumber, cvv) {
 | Element position | ❌ | ✅ | ✅ |
 | Element size | ❌ | ✅ | ✅ |
 | Element type (button, input) | ❌ | ✅ | ✅ |
-| Text content | ❌ | ❌ (wireframe) | ✅ |
-| Input values | ❌ | ❌ (wireframe) | ✅ |
+| Text content | ❌ | ❌ (never sent - wireframe only) | ✅ |
+| Input values | ❌ | ❌ (never sent - wireframe only) | ✅ |
 | Images | ❌ | ✅ | ✅ |
 | Click events | ❌ | ✅ | ✅ |
 | Form change events | ❌ | ✅ | ✅ |
@@ -767,13 +878,13 @@ FullStory's Form Privacy feature (accounts created after Nov 10, 2021) provides 
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers with Privacy Controls:
 
 1. **Always emphasize**:
    - Exclude = nothing leaves device, no events
-   - Mask = structure leaves, text wireframed, events captured
+   - Mask = structure sent, **actual text never leaves device** (replaced with wireframe locally), events captured
    - Unmask = everything captured
    - When in doubt, use the more restrictive option
 

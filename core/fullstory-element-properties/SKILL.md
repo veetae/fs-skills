@@ -1,7 +1,7 @@
 ---
 name: fullstory-element-properties
 version: v2
-description: Comprehensive guide for implementing Fullstory's Element Properties API across Web, Android, and iOS platforms. Teaches proper type handling, schema construction, value formatting, and platform-specific patterns including view/cell reuse. Includes detailed good/bad examples for e-commerce, forms, and dynamic content to help developers instrument their apps for analytics and capture business-relevant properties on interactive elements.
+description: Comprehensive guide for implementing Fullstory's Element Properties API across Web, Android, and iOS platforms. Teaches proper type handling, schema construction, value formatting, and platform-specific patterns including view/cell reuse. Includes detailed good/bad examples for e-commerce, forms, and dynamic content to help developers add semantic decoration to their apps and capture business-relevant properties on interactive elements.
 related_skills:
   - fullstory-page-properties
   - fullstory-user-properties
@@ -23,7 +23,7 @@ This skill covers implementation across Web (Browser), Android, and iOS platform
 ## Core Concepts
 
 ### API Defined Elements
-- API Defined Elements provide an instrumented approach to defining Elements in Fullstory
+- API Defined Elements provide a programmatic approach to defining Elements in Fullstory
 - Once created, these elements can be used across Fullstory features for search and analysis
 - Elements are defined using the `data-fs-element` attribute with a name
 - Element names are permanently attached to their associated Element (though display name can change)
@@ -39,6 +39,83 @@ This skill covers implementation across Web (Browser), Android, and iOS platform
 2. Properties inherit down the element hierarchy
 3. Multiple `data-fs-properties-schema` can be set in the same hierarchy
 4. Properties automatically connect to Named Elements
+
+### ⭐ Critical: Property Inheritance (Parent ↔ Child)
+
+This is one of the most powerful features of Element Properties:
+
+**Two-way inheritance:**
+- **Parent → Child**: Properties defined on a parent element are inherited by all child elements
+- **Child → Parent**: When an action occurs on a parent element, it captures properties from all defined child elements
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  FORM (data-fs-element="checkout-form")                             │
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  SHIPPING SELECT (selectedShipping="express")                │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  PAYMENT SELECT (selectedPayment="credit_card")              │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  GIFT WRAP CHECKBOX (giftWrap="true")                        │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  SUBMIT BUTTON (data-fs-element="submit-order")              │   │
+│  │  ───────────────────────────────────────────────────────     │   │
+│  │  When clicked, captures ALL properties from siblings:        │   │
+│  │  • selectedShipping: "express"                               │   │
+│  │  • selectedPayment: "credit_card"                            │   │
+│  │  • giftWrap: true                                            │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Why this matters for analytics:**
+
+```html
+<!-- Form with multiple selections and a submit button -->
+<form data-fs-element="checkout-form">
+  
+  <select data-selected-shipping
+    data-fs-properties-schema='{"data-selected-shipping": "str"}'>
+    <option value="standard">Standard</option>
+    <option value="express" selected>Express</option>
+  </select>
+  
+  <select data-selected-payment
+    data-fs-properties-schema='{"data-selected-payment": "str"}'>
+    <option value="credit_card" selected>Credit Card</option>
+    <option value="paypal">PayPal</option>
+  </select>
+  
+  <label>
+    <input type="checkbox" checked data-gift-wrap="true"
+      data-fs-properties-schema='{"data-gift-wrap": "bool"}'>
+    Gift wrap
+  </label>
+  
+  <!-- Submit button inherits ALL properties from above -->
+  <button type="submit" data-fs-element="submit-order">
+    Place Order
+  </button>
+  
+</form>
+```
+
+**In Fullstory, when "submit-order" is clicked:**
+- The click event captures: `selectedShipping`, `selectedPayment`, `giftWrap`
+- You can now create metrics like:
+  - "Submit clicks WHERE selectedPayment = 'paypal'"
+  - "Group submit clicks BY selectedShipping" → see which shipping option is most popular
+  - "Funnel: visits → checkout-form viewed → submit-order clicked WHERE giftWrap = true"
+
+> **Key Insight**: Define element properties on individual form fields, but the submit button (or any parent action element) will automatically capture the state of all child properties at the moment of interaction. This eliminates the need to manually aggregate form state.
 
 ## Platform-Specific Implementation
 
@@ -1611,7 +1688,7 @@ List Container
 - [ ] Elements are named with `data-fs-element`
 
 ### Validation in Fullstory
-1. **Trigger an interaction** on the instrumented element
+1. **Trigger an interaction** on the decorated element
 2. **Find the session** in Fullstory
 3. **Click on the element** in the replay
 4. **Check the Inspector** for element properties
@@ -1670,7 +1747,7 @@ List Container
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers implement Element Properties:
 

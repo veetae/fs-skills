@@ -29,6 +29,23 @@ Healthcare has the most stringent requirements for session analytics due to:
 > 
 > Even seemingly innocuous data can become PHI when combined with other information. Err on the side of caution.
 
+### Highly Recommended: Private by Default Mode
+
+For healthcare applications, **Fullstory's Private by Default mode is essential**:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  HEALTHCARE: Enable Private by Default                           │
+│                                                                 │
+│  • All text masked by default - no accidental PHI capture       │
+│  • Selectively unmask ONLY navigation and generic UI            │
+│  • Combined with fs-exclude for regulated areas                 │
+│  • Contact Fullstory Support to enable                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+> **Reference**: [Fullstory Private by Default](https://help.fullstory.com/hc/en-us/articles/360044349073-Fullstory-Private-by-Default)
+
 ### Key Goals for Healthcare Implementations
 
 1. **Improve patient portal UX** without capturing PHI
@@ -59,6 +76,39 @@ PHI (Protected Health Information) includes any health information that can be l
 | **Images** | Photos, scans, ID documents | fs-exclude |
 | **Biometrics** | Height, weight, vitals | fs-exclude |
 | **Insurance** | Plan, member ID, claims | fs-exclude |
+
+### HIPAA De-Identification Standards
+
+HIPAA provides two methods for de-identification. Understanding these helps clarify what Fullstory can/cannot capture:
+
+| Method | Approach | FullStory Implication |
+|--------|----------|----------------------|
+| **Safe Harbor** | Remove 18 specific identifiers | Cannot rely on this—FS captures too much visual data |
+| **Expert Determination** | Statistical/scientific analysis | Requires formal expert certification; impractical for session replay |
+
+**Key Point**: Neither de-identification method is practical for session replay. This is why **exclusion (not just masking)** is required for healthcare.
+
+```
+The 18 Safe Harbor Identifiers (all require EXCLUSION):
+├── Names
+├── Geographic data (smaller than state)
+├── Dates (except year) - birth, admission, discharge, death
+├── Phone numbers
+├── Fax numbers
+├── Email addresses
+├── Social Security numbers
+├── Medical record numbers
+├── Health plan beneficiary numbers
+├── Account numbers
+├── Certificate/license numbers
+├── Vehicle identifiers
+├── Device identifiers
+├── Web URLs
+├── IP addresses
+├── Biometric identifiers
+├── Full-face photographs
+└── Any other unique identifying characteristic
+```
 
 ### HIPAA Minimum Necessary Standard
 
@@ -761,7 +811,7 @@ function initializeFullStoryWithConsent() {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping healthcare clients with FullStory:
 

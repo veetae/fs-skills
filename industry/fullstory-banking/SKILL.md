@@ -33,6 +33,25 @@ Banking and financial services have unique requirements for session analytics du
 
 ---
 
+## Recommended: Private by Default Mode
+
+For banking applications, **Fullstory's Private by Default mode is highly recommended**:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  BANKING: Enable Private by Default                              │
+│                                                                 │
+│  • All text masked by default                                    │
+│  • Zero risk of accidentally capturing account numbers          │
+│  • Selectively unmask navigation, buttons, product names        │
+│  • Contact Fullstory Support to enable                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+> **Reference**: [Fullstory Private by Default](https://help.fullstory.com/hc/en-us/articles/360044349073-Fullstory-Private-by-Default)
+
+---
+
 ## Regulatory Framework
 
 ### PCI DSS Requirements
@@ -52,6 +71,30 @@ Banking and financial services have unique requirements for session analytics du
 | Protect customer NPI | Exclude account numbers, SSN, balances |
 | Privacy notices | Document FullStory in privacy policy |
 | Safeguards | Implement privacy controls |
+
+### Open Banking / PSD2 (EU Markets)
+
+For EU financial services using Open Banking/PSD2:
+
+| Requirement | FullStory Implication |
+|-------------|----------------------|
+| Strong Customer Authentication (SCA) | Track SCA flows for UX, exclude credentials |
+| Third-Party Provider (TPP) data | Exclude all TPP account aggregation data |
+| Consent management | Track consent flows, not consent content |
+| API data | Never capture API tokens or account data from aggregation |
+
+```javascript
+// Open Banking: Track UX flow, not financial data
+FS('trackEvent', {
+  name: 'open_banking_consent_flow',
+  properties: {
+    tpp_provider: 'generic_aggregator',  // Don't identify specific provider
+    consent_step: 'bank_redirect',
+    flow_type: 'ais'  // Account Information Service
+    // NEVER: account data, balances, transaction lists
+  }
+});
+```
 
 ### What MUST Be Excluded in Banking
 
@@ -788,7 +831,7 @@ export function TransactionList({ transactions }) {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping banking clients with FullStory:
 

@@ -640,7 +640,7 @@ FS('log', {
 
 ```javascript
 // Centralized logging utility
-const FSLogger = {
+const AppLogger = {
   _formatMessage(prefix, message, data) {
     let formatted = `[${prefix}] ${message}`;
     if (data) {
@@ -689,9 +689,9 @@ const FSLogger = {
 };
 
 // Usage
-FSLogger.info('Page loaded', { path: window.location.pathname });
-FSLogger.warn('Slow API response', { endpoint: '/api/data', duration: 5000 });
-FSLogger.error('Checkout failed', error, { cartId: '123' });
+AppLogger.info('Page loaded', { path: window.location.pathname });
+AppLogger.warn('Slow API response', { endpoint: '/api/data', duration: 5000 });
+AppLogger.error('Checkout failed', error, { cartId: '123' });
 ```
 
 ### Pattern 2: Scoped Logger Factory
@@ -813,7 +813,7 @@ window.fetch = createLoggingFetch();
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers with Logging API:
 

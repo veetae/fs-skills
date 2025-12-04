@@ -89,6 +89,32 @@ Unlike banking, e-commerce has more data that can (and should) be captured:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Marketplace Considerations
+
+For multi-vendor marketplaces, additional considerations apply:
+
+| Scenario | Privacy Implication |
+|----------|---------------------|
+| **Seller data** | Mask seller personal info (name, location); keep store/business name |
+| **Buyer-seller messaging** | EXCLUDE all message content |
+| **Seller performance data** | Exclude revenue, exact sales counts; use bands |
+| **Cross-seller analytics** | Never capture data that reveals competitive intelligence |
+| **Seller onboarding** | Exclude bank details, tax IDs; track flow completion only |
+
+```javascript
+// Marketplace: Track seller interaction without revealing seller economics
+FS('trackEvent', {
+  name: 'seller_product_viewed',
+  properties: {
+    product_category: 'electronics',
+    seller_rating_band: '4.5-5.0',       // Band, not exact rating
+    seller_review_volume: 'high',         // "high", "medium", "low"
+    marketplace_verified: true
+    // NEVER: seller revenue, exact sales, or seller contact info
+  }
+});
+```
+
 ### User Identification Pattern
 
 ```javascript
@@ -1065,7 +1091,7 @@ function trackExperimentExposure(experimentName, variant) {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping e-commerce clients with FullStory:
 

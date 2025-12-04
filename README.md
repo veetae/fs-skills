@@ -13,6 +13,37 @@ The **Fullstory Skills Repository (FSR)** is a structured collection of AI Agent
 
 ---
 
+## 🆕 Latest Enhancements
+
+### Privacy & Cookie Documentation
+- **Private by Default Mode**: Complete documentation for Fullstory's privacy-first capture mode
+- **First-Party Cookie Architecture**: `fs_uid` cookie behavior, session merging, and identity persistence
+- **Anonymous User Support**: Clarified that user properties work before identification
+
+### Industry-Specific Updates
+| Industry | New Content |
+|----------|-------------|
+| **Banking** | Open Banking/PSD2 requirements |
+| **Healthcare** | HIPAA de-identification standards (18 Safe Harbor identifiers) |
+| **E-commerce** | Marketplace/multi-vendor considerations |
+| **Gaming** | Fraud detection (7 types), game iframe decoration, responsible gaming compliance |
+| **SaaS** | AI/ML feature tracking patterns |
+| **Travel** | TSA Secure Flight requirements |
+| **Media** | Accessibility feature tracking (WCAG compliance) |
+
+### CUA Readiness (Stable Selectors)
+- **AI Agent Navigation**: How stable selectors enable Computer User Agents
+- **Extended Attributes**: `data-action`, `data-state`, `data-variant`, `data-testid`
+- **Modern Frameworks**: RSC, Qwik, Solid, Astro patterns
+- **Advanced Patterns**: Virtualized lists, Shadow DOM, micro-frontends
+
+### Data Scoping Enhancements
+- **Child→Parent Inheritance**: Property bubbling on parent interaction
+- **Privacy at Each Scope**: Guidance for each scope level
+- **All 7 Industries**: Scope recommendations per vertical
+
+---
+
 ## 🤝 How to Contribute to FSR
 
 We welcome contributions to expand and improve the Fullstory Skills Repository! Here's how to add or update skills:
@@ -131,7 +162,7 @@ FS('methodName', {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers with [this topic]:
 
@@ -235,7 +266,7 @@ Tailored guidance for specific verticals:
 |----------|-------|-----------------|
 | **Banking & Financial Services** | `fullstory-banking` | PCI DSS, GLBA, SOX; transaction masking; MFA flows |
 | **E-commerce & Retail** | `fullstory-ecommerce` | Conversion funnels; cart abandonment; product tracking |
-| **Gambling & Gaming** | `fullstory-gambling` | Responsible gambling; KYC/AML; ethical considerations |
+| **Gaming** | `fullstory-gaming` | Fraud detection; responsible gaming compliance; game iframe decoration; KYC/AML |
 | **Healthcare** | `fullstory-healthcare` | HIPAA; PHI exclusion; BAA requirements |
 | **B2B SaaS** | `fullstory-saas` | Feature adoption; onboarding; churn prediction |
 | **Travel & Hospitality** | `fullstory-travel` | Booking funnels; ancillaries; passport/ID exclusion |
@@ -249,10 +280,35 @@ Tailored guidance for specific verticals:
 
 > **Why Stable Selectors?** Modern CSS tools (CSS Modules, styled-components, Tailwind) generate dynamic class names that change every build. Stable `data-*` attributes ensure Fullstory searches, defined elements, and click maps work reliably across deployments.
 
-This single skill covers implementation patterns for:
-- React, Angular, Vue, Svelte
-- Vanilla JavaScript & Web Components
-- Server-side templates (PHP, Django, Rails, etc.)
+#### CUA Readiness (Computer User Agents)
+
+The stable selectors skill prepares your application for AI-driven automation:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Without Stable Selectors (Brittle)                              │
+│  AI sees: <button class="sc-abc123 xyz789">                      │
+│  → Class names change every build, AI navigation breaks         │
+├─────────────────────────────────────────────────────────────────┤
+│  With Stable Selectors (Resilient)                               │
+│  AI sees: <button data-component="Checkout" data-element="pay"> │
+│  → Semantic, stable, machine-readable forever                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Framework Coverage
+
+This single skill **replaces the legacy React plugins** (`fullstory-babel-plugin-annotate-react`, `eslint-plugin-annotate-react`) with framework-agnostic guidance:
+
+| Framework | Supported |
+|-----------|-----------|
+| React / Next.js (App Router, RSC) | ✅ |
+| Angular | ✅ |
+| Vue.js / Nuxt | ✅ |
+| Svelte / SvelteKit | ✅ |
+| Qwik / Solid / Astro | ✅ |
+| Vanilla JS / Web Components | ✅ |
+| Server-rendered (PHP, Django, Rails) | ✅ |
 
 No external plugins required—just add `data-component` and `data-element` attributes to your markup.
 
@@ -262,13 +318,31 @@ No external plugins required—just add `data-component` and `data-element` attr
 
 Different industries have vastly different requirements for Fullstory implementation:
 
+### Private by Default Recommendation
+
+Fullstory offers a **Private by Default mode** that inverts the capture default—everything is masked unless explicitly unmasked. This is the recommended approach for high-sensitivity industries:
+
+| Industry | Private by Default? | Rationale |
+|----------|---------------------|-----------|
+| **Banking** | ✅ **Highly recommended** | Financial data, regulatory requirements |
+| **Healthcare** | ✅ **Required** | HIPAA PHI protection |
+| **SaaS (Enterprise)** | ⚠️ **Recommended** | Customer data in multi-tenant apps |
+| **Gaming** | ⚠️ **Consider** | Financial + responsible gaming data |
+| **Travel** | ⚠️ **Consider** | Passport, payment data |
+| **E-commerce** | ❌ Usually not needed | Product data should be visible |
+| **Media** | ❌ Usually not needed | Content data is the analytics |
+
+> **Enable Private by Default**: Contact [Fullstory Support](https://help.fullstory.com/hc/en-us/requests/new) or select during account setup.
+> 
+> **Reference**: [Fullstory Private by Default](https://help.fullstory.com/hc/en-us/articles/360044349073-Fullstory-Private-by-Default)
+
 ### Privacy Defaults by Industry
 
 | Industry | Default Privacy Mode | Financial Data | User Content | Conversion Tracking | Primary Concern |
 |----------|---------------------|----------------|--------------|---------------------|-----------------|
 | **Banking** | Exclude | Exclude (ranges only) | Exclude | Limited | Regulatory (PCI, GLBA) |
 | **E-commerce** | Unmask | Capture (orders) | Mostly capture | Rich | Conversion optimization |
-| **Gambling** | Mixed | Exclude (ranges only) | Exclude | Careful | Responsible gambling |
+| **Gaming** | Mixed | Exclude (ranges only) | Exclude | Careful | Responsible gaming |
 | **Healthcare** | Exclude | Exclude | Exclude | Very limited | HIPAA compliance |
 | **SaaS** | Unmask | Usually OK | Mask/Consider | Rich | Feature adoption |
 | **Travel** | Unmask | Capture (bookings) | Mask | Rich | Booking optimization |
@@ -276,7 +350,7 @@ Different industries have vastly different requirements for Fullstory implementa
 
 ### What to Capture by Industry
 
-| Data Type | Banking | E-commerce | Gambling | Healthcare | SaaS | Travel | Media |
+| Data Type | Banking | E-commerce | Gaming | Healthcare | SaaS | Travel | Media |
 |-----------|---------|------------|----------|------------|------|--------|-------|
 | User names | ❌ | ⚠️ Mask | ⚠️ Mask | ❌ | ⚠️ Mask | ⚠️ Mask | ⚠️ Mask |
 | Email | ❌ | ⚠️ Hash | ⚠️ Hash | ❌ | ⚠️ Consider | ⚠️ Mask | ⚠️ Consider |
@@ -296,7 +370,7 @@ Different industries have vastly different requirements for Fullstory implementa
 |----------|--------------------|-----------------------|
 | **Banking** | PCI DSS, GLBA, SOX | Exclude all financial data; use ranges |
 | **E-commerce** | PCI DSS, CCPA, GDPR | Exclude payment fields; consent for EU |
-| **Gambling** | Gaming licenses, AML/KYC | Never analyze gambling patterns; exclude amounts |
+| **Gaming** | Gaming licenses, AML/KYC | Never analyze gaming patterns; exclude amounts |
 | **Healthcare** | HIPAA, HITECH | BAA required; exclude ALL PHI; masking insufficient |
 | **SaaS** | SOC 2, GDPR | Enterprise privacy options; consent for EU |
 | **Travel** | PCI DSS, GDPR | Exclude passport/ID numbers; payment exclusion |
@@ -332,7 +406,7 @@ skills/
 ├── industry/                          # 7 Industry-Specific Skills
 │   ├── fullstory-banking/
 │   ├── fullstory-ecommerce/
-│   ├── fullstory-gambling/
+│   ├── fullstory-gaming/
 │   ├── fullstory-healthcare/
 │   ├── fullstory-media-entertainment/
 │   ├── fullstory-saas/

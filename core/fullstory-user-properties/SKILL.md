@@ -13,10 +13,12 @@ related_skills:
 
 ## Overview
 
-Fullstory's User Properties API allows developers to capture custom user data that enriches user profiles for search, filtering, segmentation, and analytics. Unlike `setIdentity` which establishes who the user is, `setProperties` with `type: 'user'` lets you add or update attributes about an already-identified user.
+Fullstory's User Properties API allows developers to capture custom user data that enriches user profiles for search, filtering, segmentation, and analytics. Unlike `setIdentity` which links a session to a known user ID, `setProperties` with `type: 'user'` lets you add or update attributes about **any** user - including anonymous users.
+
+> **Important**: Every new browser/device starts as an anonymous user, tracked via the `fs_uid` first-party cookie (1-year expiry). You can set user properties on anonymous users *before* they ever identify. These properties persist across sessions and transfer when/if the user later identifies via `setIdentity`.
 
 Key use cases:
-- **Profile Enrichment**: Add user attributes after identification
+- **Anonymous User Enrichment**: Add attributes before the user logs in (referral source, landing page, visitor type)
 - **Progressive Profiling**: Update properties as you learn more about the user
 - **Subscription/Plan Changes**: Track plan upgrades without re-identifying
 - **Preference Tracking**: Store user settings and preferences
@@ -26,10 +28,74 @@ Key use cases:
 
 ### setIdentity vs setProperties
 
-| API | Purpose | When to Use |
-|-----|---------|-------------|
-| `setIdentity` | Establish who the user is + initial properties | Login, authentication |
-| `setProperties` (user) | Add/update properties for current user | Anytime after identification |
+| API | Purpose | When to Use | Works for Anonymous? |
+|-----|---------|-------------|---------------------|
+| `setIdentity` | Link session to a known user ID + optional initial properties | Login, authentication | No (converts anonymous → identified) |
+| `setProperties` (user) | Add/update properties for the current user | **Anytime** - works for anonymous AND identified users | **Yes** ✅ |
+
+> **Key Distinction**: Use `setIdentity` when you need to **link a session to a known user** (requires a `uid`). Use `setProperties` when you just want to **add or update attributes** about the current user - this works for both identified AND anonymous users.
+
+### Anonymous Users in Fullstory
+
+Every user starts as anonymous, tracked via the `fs_uid` first-party cookie:
+
+- **Cookie-based identity**: Fullstory sets an `fs_uid` cookie (1-year expiry) that tracks the same anonymous user across sessions and page views
+- **Persistent across sessions**: As long as the cookie exists, all sessions are linked to the same anonymous user
+- **Can receive user properties**: Use `setProperties` to add attributes to anonymous users
+- **Properties transfer on identification**: When `setIdentity` is called, ALL previous sessions (linked by the cookie) merge into the identified user
+- **Searchable and segmentable**: Anonymous users work just like identified users in Fullstory
+
+> **Reference**: [Why Fullstory uses First-Party Cookies](https://help.fullstory.com/hc/en-us/articles/360020829513-Why-Fullstory-uses-First-Party-Cookies)
+
+```javascript
+// User lands on your site (anonymous - "User 4521" in Fullstory)
+FS('setProperties', {
+  type: 'user',
+  properties: {
+    landing_page: '/pricing',
+    referral_source: 'google_ads',
+    campaign: 'spring_sale_2024'
+  }
+});
+
+// ... user browses for a while ...
+
+// Later, user creates an account and logs in
+FS('setIdentity', {
+  uid: 'user_abc123',
+  properties: {
+    displayName: 'Jane Smith',
+    email: 'jane@example.com'
+  }
+});
+// The anonymous properties (landing_page, referral_source, campaign) 
+// are now attached to the identified user "Jane Smith"
+```
+
+### When to Use Each
+
+```
+User logs in → setIdentity({ uid: "user_123", properties: { displayName: "Jane" } })
+                ↓
+User updates profile → setProperties({ type: 'user', properties: { plan: "pro" } })
+                ↓
+User upgrades plan → setProperties({ type: 'user', properties: { plan: "enterprise" } })
+```
+
+**For anonymous users** (not yet logged in):
+```javascript
+// User hasn't logged in yet, but we know something about them
+FS('setProperties', {
+  type: 'user',
+  properties: {
+    visitor_type: 'returning',
+    referral_source: 'google_ads',
+    landing_page: '/pricing'
+  }
+});
+// These properties will be associated with the anonymous user
+// and will persist if/when they later identify
+```
 
 ### Property Persistence
 - User properties persist across sessions
@@ -883,7 +949,7 @@ FS('trackEvent', {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers implement User Properties:
 
@@ -901,7 +967,7 @@ When helping developers implement User Properties:
    - Overwriting displayName accidentally
 
 3. **Questions to ask developers**:
-   - Is the user already identified when this runs?
+   - Will the user be anonymous or identified? (Both work - setProperties doesn't require identification)
    - How often will these properties be updated?
    - What data types are these values?
    - Do you need to track the change as an event too?

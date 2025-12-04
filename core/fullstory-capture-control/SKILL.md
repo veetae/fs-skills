@@ -327,7 +327,7 @@ const captureController = new RouteBasedCapture();
 
 ```javascript
 // GOOD: Control capture for testing and development
-const FSDevTools = {
+const DevCaptureControls = {
   isOverridden: false,
   
   // Disable capture for current session (dev/testing)
@@ -377,11 +377,11 @@ const FSDevTools = {
 };
 
 // Initialize on page load
-FSDevTools.init();
-FSDevTools.setupKeyboardShortcut();
+DevCaptureControls.init();
+DevCaptureControls.setupKeyboardShortcut();
 
 // Also expose for console access
-window.FSDevTools = FSDevTools;
+window.DevCaptureControls = DevCaptureControls;
 ```
 
 **Why this is good:**
@@ -494,7 +494,7 @@ authService.on('userChanged', (user) => {
 
 ```javascript
 // GOOD: Clean shutdown on page unload
-class FSLifecycleManager {
+class CaptureLifecycleManager {
   constructor() {
     this.setupUnloadHandler();
     this.setupVisibilityHandler();
@@ -527,7 +527,7 @@ class FSLifecycleManager {
 }
 
 // Initialize
-const fsLifecycle = new FSLifecycleManager();
+const fsLifecycle = new CaptureLifecycleManager();
 
 // For React apps
 // useEffect(() => {
@@ -897,7 +897,7 @@ function PaymentForm() {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers with Capture Control:
 

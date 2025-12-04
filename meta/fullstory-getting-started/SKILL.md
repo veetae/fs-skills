@@ -64,7 +64,7 @@ This guide provides everything you need to implement Fullstory's Browser API v2 
 |-------|----------|-------------------|
 | `fullstory-banking` | Banking & Financial | PCI, GLBA, transaction masking |
 | `fullstory-ecommerce` | E-commerce & Retail | Conversion funnels, product data |
-| `fullstory-gambling` | Gambling & Gaming | Responsible gambling, KYC |
+| `fullstory-gaming` | Gaming | Responsible gaming, KYC |
 | `fullstory-healthcare` | Healthcare | HIPAA, PHI exclusion |
 | `fullstory-saas` | B2B SaaS | Feature adoption, churn |
 | `fullstory-travel` | Travel & Hospitality | Booking funnels, PCI |
@@ -82,7 +82,7 @@ Different industries have vastly different requirements for FullStory implementa
 |----------|---------------------|----------------|--------------|---------------------|-----------------|
 | **Banking** | Exclude | Exclude (ranges only) | Exclude | Limited | Regulatory (PCI, GLBA) |
 | **E-commerce** | Unmask | Capture (orders) | Mostly capture | Rich | Conversion optimization |
-| **Gambling** | Mixed | Exclude (ranges only) | Exclude | Careful | Responsible gambling |
+| **Gaming** | Mixed | Exclude (ranges only) | Exclude | Careful | Responsible gaming |
 | **Healthcare** | Exclude | Exclude | Exclude | Very limited | HIPAA compliance |
 | **SaaS** | Unmask | Usually OK | Mask/Consider | Rich | Feature adoption |
 | **Travel** | Unmask | Capture (bookings) | Mask | Rich | Booking optimization |
@@ -90,7 +90,7 @@ Different industries have vastly different requirements for FullStory implementa
 
 ### What to Capture by Industry
 
-| Data Type | Banking | E-commerce | Gambling | Healthcare | SaaS | Travel | Media |
+| Data Type | Banking | E-commerce | Gaming | Healthcare | SaaS | Travel | Media |
 |-----------|---------|------------|----------|------------|------|--------|-------|
 | User names | ❌ | ⚠️ Mask | ⚠️ Mask | ❌ | ⚠️ Mask | ⚠️ Mask | ⚠️ Mask |
 | Email | ❌ | ⚠️ Hash | ⚠️ Hash | ❌ | ⚠️ Consider | ⚠️ Mask | ⚠️ Consider |
@@ -110,7 +110,7 @@ Different industries have vastly different requirements for FullStory implementa
 |----------|--------------------|-----------------------|
 | **Banking** | PCI DSS, GLBA, SOX | BAA not typically needed; exclude all financial data |
 | **E-commerce** | PCI DSS, CCPA, GDPR | Exclude payment fields; consent for EU |
-| **Gambling** | Gaming licenses, AML/KYC | Never analyze gambling patterns; exclude amounts |
+| **Gaming** | Gaming licenses, AML/KYC | Never analyze gaming patterns; exclude amounts |
 | **Healthcare** | HIPAA, HITECH | BAA required; exclude ALL PHI; masking insufficient |
 | **SaaS** | SOC 2, GDPR | Enterprise privacy options; consent for EU |
 | **Travel** | PCI DSS, GDPR | Exclude passport/ID numbers; payment exclusion |
@@ -212,6 +212,53 @@ window['_fs_namespace'] = 'FS';
 | `_fs_capture_on_startup` | Start capturing immediately | `true` |
 | `_fs_host` | FullStory host | `'fullstory.com'` |
 | `_fs_script` | Script location | `'edge.fullstory.com/s/fs.js'` |
+
+### How Fullstory Tracks Users (First-Party Cookies)
+
+Fullstory uses **first-party cookies** set on YOUR domain to track users:
+
+| Cookie | Duration | Purpose |
+|--------|----------|---------|
+| `fs_uid` | 1 year | Tracks user across sessions (the "capture cookie") |
+| `fs_cid` | 1 year | Stores consent state for the device |
+| `fs_lua` | 30 min | Last user action timestamp (session lifecycle) |
+
+**Why First-Party Cookies Matter:**
+
+| Aspect | First-Party (Fullstory) | Third-Party Cookies |
+|--------|-------------------------|---------------------|
+| Domain | Set on YOUR domain | Set on external domain |
+| Browser blocking | ✅ Not blocked by browsers/ad-blockers | ❌ Often blocked |
+| Cross-site tracking | ❌ Cannot track across different sites | ✅ Can track across web |
+| Privacy | ✅ Your data stays isolated to your site | ❌ Data aggregated |
+
+**Key Behaviors:**
+- **Anonymous users persist**: Same `fs_uid` cookie = same user across sessions (until cookie expires/deleted)
+- **Session merging**: When `setIdentity` is called, ALL previous anonymous sessions from that cookie merge into the identified user
+- **Anonymization resets**: `setIdentity({ anonymous: true })` generates a NEW `fs_uid` cookie, breaking the link to previous sessions
+
+> **Reference**: [Why Fullstory uses First-Party Cookies](https://help.fullstory.com/hc/en-us/articles/360020829513-Why-Fullstory-uses-First-Party-Cookies)
+
+### Private by Default Mode (Recommended for Sensitive Industries)
+
+Fullstory offers a **Private by Default** capture mode that inverts the default behavior:
+
+| Mode | Default Behavior | Your Action |
+|------|------------------|-------------|
+| **Standard** | Everything captured (unmask is default) | Add `fs-mask` / `fs-exclude` to protect sensitive elements |
+| **Private by Default** | Everything masked | Add `fs-unmask` to reveal safe content |
+
+**When to Use Private by Default:**
+- ✅ Banking / Financial services
+- ✅ Healthcare / HIPAA-regulated
+- ✅ Enterprise SaaS with customer data
+- ✅ Any app where "default open" is too risky
+
+**Enable via:**
+- **New accounts**: Select during onboarding wizard
+- **Existing accounts**: Contact [Fullstory Support](https://help.fullstory.com/hc/en-us/requests/new)
+
+> **Reference**: [Fullstory Private by Default](https://help.fullstory.com/hc/en-us/articles/360044349073-Fullstory-Private-by-Default)
 
 ### Consent-Required Configuration (GDPR)
 
@@ -337,7 +384,7 @@ Is this public/business data?
 |----------|----------------------|
 | Healthcare | Use Private by Default mode; explicit unmask only |
 | Banking | Exclude financial data; mask PII |
-| Gambling | Exclude amounts; mask user info |
+| Gaming | Exclude amounts; mask user info |
 | E-commerce | Unmask products; mask checkout PII; exclude payment |
 | SaaS | Unmask features; mask user content |
 | Travel | Unmask search/booking; mask traveler PII; exclude IDs |
@@ -663,7 +710,7 @@ FS('setIdentity', { uid: user.id });
 |-------|---------|
 | `fullstory-banking` | Financial services implementation |
 | `fullstory-ecommerce` | E-commerce/retail implementation |
-| `fullstory-gambling` | Gambling/gaming implementation |
+| `fullstory-gaming` | Gaming/gaming implementation |
 | `fullstory-healthcare` | Healthcare/HIPAA implementation |
 | `fullstory-saas` | B2B SaaS implementation |
 | `fullstory-travel` | Travel/hospitality implementation |

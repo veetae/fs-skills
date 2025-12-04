@@ -11,6 +11,13 @@ related_skills:
   - fullstory-getting-started
   - fullstory-privacy-controls
   - fullstory-privacy-strategy
+  - fullstory-banking
+  - fullstory-ecommerce
+  - fullstory-gaming
+  - fullstory-healthcare
+  - fullstory-saas
+  - fullstory-travel
+  - fullstory-media-entertainment
 ---
 
 # Universal Data Scoping and Decoration: The Unified Model (v4.0)
@@ -91,7 +98,82 @@ FS('setProperties', { type: 'page', properties: { productId: 'SKU-123' }});
 FullStory's property inheritance:
 - **User properties** → Available on all sessions for that user
 - **Page properties** → Available on all elements/events on that page
-- **Element properties** → Inherited by child elements
+- **Element properties** → Inherited by child elements, AND child properties bubble up to parent on interaction
+
+**Important: Child → Parent Inheritance**
+
+When a user interacts with a parent element (e.g., clicks a form submit button), Fullstory captures properties from ALL child elements that have been interacted with:
+
+```html
+<form data-fs-element="CheckoutForm">
+  <select data-fs-element="ShippingMethod" 
+          data-fs-properties-schema='{"value": {"type": "str", "name": "shipping"}}'>
+    <option value="standard">Standard</option>
+    <option value="express">Express</option>
+  </select>
+  <button type="submit">Place Order</button>
+</form>
+<!-- When form is submitted, Fullstory captures shipping selection from child -->
+```
+
+### Rule 4: Consider Privacy at Each Scope
+
+Different scopes have different privacy implications:
+
+| Scope | Privacy Consideration | Recommendation |
+|-------|----------------------|----------------|
+| **User Properties** | Persists across sessions, linked to identity | Hash/tokenize PII; use internal IDs |
+| **Page Properties** | Visible in any session replay on this page | Mask sensitive page context |
+| **Element Properties** | Captured on interaction | Use `fs-exclude` for sensitive inputs |
+| **Events** | Logged with timestamp | Never include PII in event properties |
+
+```javascript
+// ✅ GOOD: Privacy-conscious scoping
+FS('setIdentity', {
+  uid: 'usr_abc123',  // Internal ID, not email
+  properties: {
+    plan: 'enterprise',
+    account_age_days: 365
+    // NO: email, name, phone
+  }
+});
+
+FS('setProperties', {
+  type: 'page',
+  properties: {
+    pageName: 'Account Settings',
+    section: 'billing'
+    // NO: account balance, card details
+  }
+});
+```
+
+> **Reference**: See `fullstory-privacy-controls` for fs-exclude/fs-mask/fs-unmask and `fullstory-privacy-strategy` for comprehensive privacy guidance.
+
+### Rule 5: Anonymous Users Can Have Properties
+
+User properties work for **anonymous users** (before `setIdentity` is called). Properties persist via the `fs_uid` first-party cookie and transfer when the user later identifies:
+
+```javascript
+// Anonymous user lands on site
+FS('setProperties', {
+  type: 'user',
+  properties: {
+    landing_page: '/pricing',
+    referral_source: 'google_ads',
+    campaign: 'spring_promo'
+  }
+});
+
+// Later, user signs up - properties transfer automatically
+FS('setIdentity', {
+  uid: 'usr_newuser123',
+  properties: {
+    signup_date: '2024-01-15'
+  }
+});
+// Now user has: landing_page, referral_source, campaign, AND signup_date
+```
 
 ---
 
@@ -289,18 +371,20 @@ START: You have data to capture
 
 ## IV. Common Patterns by Industry
 
-### E-commerce
+> **Detailed guidance**: See industry-specific skills for comprehensive implementation patterns.
+
+### E-commerce (`fullstory-ecommerce`)
 
 | Data Point | Scope | Implementation |
 |------------|-------|----------------|
-| User's plan/loyalty tier | User Property | `setIdentity` |
+| User's loyalty tier | User Property | `setIdentity` |
 | Search term | Page Property | `setProperties(page)` |
 | Product ID (on PDP) | Page Property | `setProperties(page)` |
 | Product ID (in grid) | Element Property | `data-fs-*` |
 | Cart value | Page Property | `setProperties(page)` |
 | Purchase completed | Event | `trackEvent` |
 
-### SaaS
+### SaaS (`fullstory-saas`)
 
 | Data Point | Scope | Implementation |
 |------------|-------|----------------|
@@ -311,16 +395,60 @@ START: You have data to capture
 | Feature used | Event | `trackEvent` |
 | Setting changed | Event | `trackEvent` |
 
-### Content/Media
+### Media & Entertainment (`fullstory-media-entertainment`)
 
 | Data Point | Scope | Implementation |
 |------------|-------|----------------|
 | Subscriber status | User Property | `setIdentity` |
-| Article category | Page Property | `setProperties(page)` |
-| Article ID (on detail) | Page Property | `setProperties(page)` |
-| Related article IDs | Element Property | `data-fs-*` |
+| Content category | Page Property | `setProperties(page)` |
+| Content ID (on detail) | Page Property | `setProperties(page)` |
+| Related content IDs | Element Property | `data-fs-*` |
 | Video played | Event | `trackEvent` |
 | Content shared | Event | `trackEvent` |
+
+### Banking & Finance (`fullstory-banking`)
+
+| Data Point | Scope | Implementation |
+|------------|-------|----------------|
+| Account type | User Property | `setIdentity` |
+| Current section | Page Property | `setProperties(page)` |
+| Transaction type | Page Property | `setProperties(page)` |
+| Account selector | Element Property | `data-fs-*` (ID only, mask details) |
+| Transfer completed | Event | `trackEvent` (no amounts) |
+| MFA step | Event | `trackEvent` |
+
+### Gaming (`fullstory-gaming`)
+
+| Data Point | Scope | Implementation |
+|------------|-------|----------------|
+| Player tier (VIP status) | User Property | `setIdentity` |
+| Game lobby section | Page Property | `setProperties(page)` |
+| Active game ID | Page Property | `setProperties(page)` |
+| Game tile in grid | Element Property | `data-fs-*` |
+| Wager placed | Event | `trackEvent` (for compliance) |
+| Game launched | Event | `trackEvent` |
+
+### Healthcare (`fullstory-healthcare`)
+
+| Data Point | Scope | Implementation |
+|------------|-------|----------------|
+| User role (patient/provider) | User Property | `setIdentity` |
+| Section (appointments, records) | Page Property | `setProperties(page)` |
+| Flow step | Page Property | `setProperties(page)` |
+| Form field (non-PHI only) | Element Property | `data-fs-*` + `fs-exclude` |
+| Appointment scheduled | Event | `trackEvent` (no PHI) |
+| Form submitted | Event | `trackEvent` (completion only) |
+
+### Travel & Hospitality (`fullstory-travel`)
+
+| Data Point | Scope | Implementation |
+|------------|-------|----------------|
+| Loyalty tier | User Property | `setIdentity` |
+| Search criteria | Page Property | `setProperties(page)` |
+| Selected flight/hotel | Page Property | `setProperties(page)` |
+| Flight option in results | Element Property | `data-fs-*` |
+| Booking completed | Event | `trackEvent` |
+| Ancillary added | Event | `trackEvent` |
 
 ---
 
@@ -397,9 +525,9 @@ Before implementing, answer these questions:
 
 ---
 
-## VII. Related Core Skills
+## VII. Related Skills
 
-For detailed implementation guidance on each API:
+### Core API Skills
 
 | API | Skill Document |
 |-----|----------------|
@@ -408,6 +536,27 @@ For detailed implementation guidance on each API:
 | Page Properties | `fullstory-page-properties` |
 | Element Properties | `fullstory-element-properties` |
 | Events | `fullstory-analytics-events` |
+| Privacy Controls | `fullstory-privacy-controls` |
+
+### Industry Skills
+
+| Industry | Skill Document |
+|----------|----------------|
+| Banking & Finance | `fullstory-banking` |
+| E-commerce & Retail | `fullstory-ecommerce` |
+| Gaming | `fullstory-gaming` |
+| Healthcare | `fullstory-healthcare` |
+| B2B SaaS | `fullstory-saas` |
+| Travel & Hospitality | `fullstory-travel` |
+| Media & Entertainment | `fullstory-media-entertainment` |
+
+### Strategic Skills
+
+| Topic | Skill Document |
+|-------|----------------|
+| Getting Started | `fullstory-getting-started` |
+| Privacy Strategy | `fullstory-privacy-strategy` |
+| Stable Selectors | `fullstory-stable-selectors` |
 
 ---
 
@@ -439,24 +588,34 @@ When helping developers with data scoping:
    - What data are you trying to capture?
    - Is this about the user, the page, an element, or an action?
    - Will this data be the same across multiple elements?
+   - Is this data sensitive? What privacy level is needed?
 
 2. **Common mistakes to watch for**:
    - User data in page properties
    - Page-level data duplicated on elements
    - Actions captured as properties instead of events
    - Same data at multiple scopes
+   - PII in user properties without hashing
+   - Forgetting that anonymous users can have properties
 
 3. **Golden rules**:
    - Capture at the HIGHEST relevant scope
-   - Let inheritance do the work
+   - Let inheritance do the work (both parent→child AND child→parent)
    - User → Page → Element → Event (hierarchy)
    - Don't duplicate across scopes
+   - Consider privacy at every scope
 
 4. **Quick decision**:
-   - WHO = User Properties
+   - WHO = User Properties (works for anonymous users too!)
    - WHERE = Page Properties
    - WHAT (specific item) = Element Properties
    - WHAT HAPPENED = Events
+
+5. **Privacy quick reference**:
+   - Sensitive user data → Hash/tokenize or use internal IDs
+   - Sensitive page context → Consider masking
+   - Sensitive elements → Use `fs-exclude`
+   - Sensitive events → Never include PII in properties
 
 ---
 

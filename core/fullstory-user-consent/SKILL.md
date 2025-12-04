@@ -22,67 +22,132 @@ Fullstory's User Consent API allows developers to implement privacy-compliant se
 
 ## Core Concepts
 
-### Consent Modes
+### ⚠️ Critical: Two Different Consent Approaches
 
-| Mode | Behavior | Use Case |
-|------|----------|----------|
-| `consent: true` | Start capturing for consented users | User accepted tracking |
-| `consent: false` | Stop capturing | User declined or revoked |
-| Not set | Depends on snippet configuration | Default behavior |
+Fullstory has **two separate mechanisms** for consent. Using the wrong one is a common mistake:
 
-### How Consent Works
+| Approach | API | What It Controls | Use Case |
+|----------|-----|-----------------|----------|
+| **Element-Level Consent** | `FS('setIdentity', { consent: true/false })` | Only elements marked "Capture with consent" in Fullstory Privacy Settings | Selective capture of specific sensitive elements |
+| **Holistic Consent (CMP)** | `_fs_capture_on_startup = false` + `FS('start')` | **ALL** Fullstory capture | GDPR cookie banners, consent management platforms |
 
-1. **Snippet Configuration**: Configure snippet to require consent
-2. **User Choice**: Present consent UI to user
-3. **Set Consent**: Call API based on user choice
-4. **Capture Starts/Stops**: FullStory responds to consent state
+### Element-Level Consent (setIdentity with consent)
 
-### Consent Flow
+Per the [official documentation](https://developer.fullstory.com/browser/fullcapture/user-consent/):
+
+> "HTML Elements that have been configured to 'Capture data with user consent' in Fullstory's privacy settings are only captured after an invocation of `FS('setIdentity', { consent: true })`."
+
+**This does NOT control all Fullstory capture** - only specific elements you've pre-configured in the Fullstory UI to require consent.
+
+> **Why `setIdentity`?** This is Fullstory's API design choice - the `consent` parameter happens to be passed through the `setIdentity` method. You do **NOT** need to provide a `uid` or actually identify the user. You can simply call `FS('setIdentity', { consent: true })` for anonymous users - it just toggles the element-level consent flag.
+
+```javascript
+// This works - no uid required, user stays anonymous
+FS('setIdentity', { consent: true });
+
+// This also works - consent + identification combined
+FS('setIdentity', { uid: 'user_123', consent: true });
+```
+
+| Consent State | Effect |
+|---------------|--------|
+| `consent: true` | Capture elements marked "Capture with consent" |
+| `consent: false` | Don't capture those specific elements |
+| Not set | Those specific elements not captured |
+
+### Holistic Consent (Consent Management Platforms / GDPR)
+
+For **cookie consent banners** and **consent management platforms** where you need to delay **ALL** Fullstory capture until consent is given, use the [capture delay approach](https://developer.fullstory.com/browser/fullcapture/capture-data/#manually-delay-data-capture):
+
+```javascript
+// BEFORE the Fullstory snippet loads
+window['_fs_capture_on_startup'] = false;
+
+// ... Fullstory snippet loads but does NOT capture ...
+
+// AFTER user gives consent via your CMP/cookie banner
+FS('start');  // NOW Fullstory begins capturing
+```
+
+### Choosing the Right Approach
 
 ```
-Page Load  →  Show Consent Banner  →  User Accepts  →  FS('setIdentity', { consent: true })
-                                                              ↓
-                                                    FullStory starts capturing
-                                      
-              User Declines  →  FS('setIdentity', { consent: false })
-                                        ↓
-                              FullStory doesn't capture
+Do you need to delay ALL Fullstory capture until consent?
+│
+├─ YES (GDPR cookie banner, CMP integration)
+│  └─ Use: _fs_capture_on_startup = false + FS('start')
+│
+└─ NO (Just want some elements to require extra consent)
+   └─ Use: FS('setIdentity', { consent: true/false })
 ```
 
-### Consent vs Identity
+### Combining Both Approaches
 
-| API Call | Effect |
-|----------|--------|
-| `FS('setIdentity', { consent: true })` | Enable capture, stays anonymous |
-| `FS('setIdentity', { uid: '123', consent: true })` | Enable capture AND identify user |
-| `FS('setIdentity', { consent: false })` | Disable capture |
+For maximum privacy compliance, you can use both:
+
+```javascript
+// Step 1: Delay all capture until cookie consent
+window['_fs_capture_on_startup'] = false;
+
+// Step 2: User accepts cookies via your CMP
+onCookieConsentAccepted(() => {
+  FS('start');  // Begin general capture
+  
+  // Step 3: Later, user opts into extra data sharing
+  // (for elements marked "Capture with consent" in FS settings)
+  if (userAcceptedEnhancedTracking) {
+    FS('setIdentity', { consent: true });
+  }
+});
+```
 
 ---
 
 ## API Reference
 
-### Basic Syntax
+### Approach 1: Holistic Consent (Recommended for GDPR/CMP)
 
 ```javascript
-// Grant consent (enable capture)
+// BEFORE Fullstory snippet - prevent capture on startup
+window['_fs_capture_on_startup'] = false;
+
+// AFTER user consents - start all capture
+FS('start');
+
+// If user later revokes consent - stop all capture
+FS('shutdown');
+
+// If user consents again
+FS('restart');
+```
+
+| Method | Effect |
+|--------|--------|
+| `window['_fs_capture_on_startup'] = false` | Prevent ALL capture until `FS('start')` |
+| `FS('start')` | Begin capture (after delay) |
+| `FS('shutdown')` | Stop all capture |
+| `FS('restart')` | Resume capture after shutdown |
+
+### Approach 2: Element-Level Consent
+
+```javascript
+// Enable capture of elements marked "Capture with consent"
 FS('setIdentity', { consent: true });
 
-// Grant consent AND identify user
+// Disable capture of those specific elements
+FS('setIdentity', { consent: false });
+
+// Combine with user identification
 FS('setIdentity', { 
   uid: string,
   consent: true,
   properties?: object
 });
-
-// Revoke consent (disable capture)
-FS('setIdentity', { consent: false });
 ```
-
-### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `consent` | boolean | Yes (for consent flow) | `true` to enable, `false` to disable capture |
+| `consent` | boolean | Yes | `true` enables, `false` disables element-level consent capture |
 | `uid` | string | No | User identifier (if also identifying) |
 | `properties` | object | No | User properties (if identifying) |
 
@@ -94,11 +159,18 @@ FS('setIdentity', { consent: false });
 
 ## ✅ GOOD IMPLEMENTATION EXAMPLES
 
-### Example 1: Cookie Consent Banner Integration
+### Example 1: GDPR Cookie Consent Banner (Holistic Approach)
 
 ```javascript
-// GOOD: Integrate with cookie consent banner
-class ConsentManager {
+// GOOD: Holistic consent for GDPR/cookie banners
+// This approach delays ALL Fullstory capture until consent is given
+
+// STEP 1: In your HTML, BEFORE the Fullstory snippet
+// <script>window['_fs_capture_on_startup'] = false;</script>
+// <script>/* Fullstory snippet here */</script>
+
+// STEP 2: Your consent manager class
+class GDPRConsentManager {
   constructor() {
     this.consentKey = 'fs_consent';
     this.initFromStorage();
@@ -109,24 +181,21 @@ class ConsentManager {
     
     if (storedConsent === 'granted') {
       this.grantConsent();
-    } else if (storedConsent === 'denied') {
-      this.denyConsent();
     }
-    // If null, user hasn't chosen - wait for banner interaction
+    // If denied or not set, Fullstory stays disabled (capture never started)
   }
   
   grantConsent() {
     localStorage.setItem(this.consentKey, 'granted');
     
-    // Enable FullStory capture
-    FS('setIdentity', { consent: true });
+    // Start ALL Fullstory capture
+    FS('start');
     
     // If user is logged in, also identify them
     const currentUser = getCurrentUser();
     if (currentUser) {
       FS('setIdentity', {
         uid: currentUser.id,
-        consent: true,
         properties: {
           displayName: currentUser.name,
           email: currentUser.email
@@ -134,16 +203,16 @@ class ConsentManager {
       });
     }
     
-    console.log('FullStory consent granted');
+    console.log('FullStory capture started');
   }
   
-  denyConsent() {
+  revokeConsent() {
     localStorage.setItem(this.consentKey, 'denied');
     
-    // Disable FullStory capture
-    FS('setIdentity', { consent: false });
+    // Stop ALL Fullstory capture
+    FS('shutdown');
     
-    console.log('FullStory consent denied');
+    console.log('FullStory capture stopped');
   }
   
   hasConsent() {
@@ -152,13 +221,14 @@ class ConsentManager {
   
   resetConsent() {
     localStorage.removeItem(this.consentKey);
+    FS('shutdown');  // Stop capture when consent is reset
     // Show banner again
     showConsentBanner();
   }
 }
 
 // Initialize
-const consent = new ConsentManager();
+const consent = new GDPRConsentManager();
 
 // Wire up to consent banner
 document.getElementById('accept-cookies').addEventListener('click', () => {
@@ -167,23 +237,66 @@ document.getElementById('accept-cookies').addEventListener('click', () => {
 });
 
 document.getElementById('decline-cookies').addEventListener('click', () => {
-  consent.denyConsent();
+  consent.revokeConsent();
   hideConsentBanner();
 });
 ```
 
 **Why this is good:**
-- ✅ Persists consent choice
+- ✅ Uses `_fs_capture_on_startup = false` to **prevent ALL capture** until consent
+- ✅ Uses `FS('start')` / `FS('shutdown')` for holistic control
+- ✅ Persists consent choice in localStorage
 - ✅ Restores consent state on page load
-- ✅ Integrates with existing banner
 - ✅ Handles logged-in users properly
+- ✅ Complies with GDPR requirement that NO tracking occurs before consent
 
-### Example 2: GDPR-Compliant Implementation
+### Example 2: Element-Level Consent (Selective Capture)
 
 ```javascript
-// GOOD: Full GDPR-compliant consent flow
-const GDPRConsent = {
-  // Check if user is in EU (simplified - use proper geolocation in production)
+// GOOD: Element-level consent for specific sensitive elements
+// Use this when you want general capture but extra consent for certain elements
+
+// First, in Fullstory Privacy Settings, mark specific elements as 
+// "Capture data with user consent" (e.g., form fields with sensitive data)
+
+// Then in your code:
+const ElementConsentManager = {
+  // User opts into enhanced tracking (for elements marked "Capture with consent")
+  enableEnhancedTracking() {
+    FS('setIdentity', { consent: true });
+    console.log('Enhanced tracking enabled for consent-marked elements');
+  },
+  
+  // User opts out of enhanced tracking
+  disableEnhancedTracking() {
+    FS('setIdentity', { consent: false });
+    console.log('Enhanced tracking disabled');
+  }
+};
+
+// Usage in a preferences panel
+document.getElementById('enhanced-tracking-checkbox').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    ElementConsentManager.enableEnhancedTracking();
+  } else {
+    ElementConsentManager.disableEnhancedTracking();
+  }
+});
+```
+
+**Why this is good:**
+- ✅ General Fullstory capture still works
+- ✅ Only specific pre-configured elements require extra consent
+- ✅ Gives users granular control over sensitive data capture
+
+### Example 3: Region-Based Consent (GDPR for EU Only)
+
+```javascript
+// GOOD: Full GDPR-compliant consent flow with region detection
+// IMPORTANT: Set window['_fs_capture_on_startup'] = false BEFORE snippet loads
+
+const RegionalConsent = {
+  // Check if user is in EU (simplified - use proper geolocation service in production)
   isEUUser() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone.includes('Europe');
   },
@@ -195,7 +308,7 @@ const GDPRConsent = {
     
     if (!needsConsent) {
       // Non-EU: can capture without explicit consent (check local laws)
-      FS('setIdentity', { consent: true });
+      FS('start');  // Use start() since we delayed capture
       return;
     }
     
@@ -795,7 +908,7 @@ const ConsentStateMachine = {
 
 ```javascript
 // Wrapper that checks consent before any FS call
-const FSConsent = {
+const ConsentManager = {
   _consentGranted: false,
   
   init(granted) {
@@ -837,8 +950,8 @@ const FSConsent = {
 };
 
 // Usage
-FSConsent.init(checkStoredConsent());
-FSConsent.trackEvent('Page Viewed', { page: '/home' });
+ConsentManager.init(checkStoredConsent());
+ConsentManager.trackEvent('Page Viewed', { page: '/home' });
 ```
 
 ---
@@ -885,7 +998,7 @@ Then call `FS('setIdentity', { consent: true })` to start capture.
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers with Consent API:
 

@@ -16,7 +16,7 @@ related_skills:
 Fullstory's Page Properties API allows developers to capture contextual information about the current page that enriches sessions for search, filtering, segmentation, and journey analysis. Unlike user properties that persist across sessions, page properties are session-scoped and reset when the URL path changes.
 
 Key use cases:
-- **Page Naming**: Define semantic page names for Journeys
+- **Page Naming**: Define semantic page names that enrich ALL events on that page across Fullstory (Search, Segments, Funnels, Journeys, Metrics)
 - **Search Context**: Capture search terms and filters on results pages
 - **Checkout State**: Track cart value, step number, coupon codes
 - **Content Context**: Capture article categories, author, publish date
@@ -50,6 +50,37 @@ Page Load  →  setProperties(page)  →  Properties Active  →  URL Change  �
 | Element Properties | Element | Interaction | Click-level context |
 | Event Properties | Event | One event | Action-specific data |
 
+### ⚠️ Critical: Use Properties to Stay Within the 1,000 Page Limit
+
+Fullstory limits you to **1,000 unique `pageName` values**. Once exceeded, additional page names are silently ignored.
+
+**The Strategy**: Use a **generic page name** + **properties for variations**.
+
+```
+❌ BAD: Unique pageName for every product
+   pageName: "iPhone 15 Pro Max 256GB Space Black"
+   pageName: "iPhone 15 Pro Max 512GB Natural Titanium"
+   pageName: "Samsung Galaxy S24 Ultra 256GB..."
+   → Exhausts 1,000 limit quickly!
+
+✅ GOOD: Generic pageName + properties for context
+   pageName: "Product Detail"
+   + productName: "iPhone 15 Pro Max"
+   + productCategory: "Smartphones"
+   + productBrand: "Apple"
+   + productPrice: 1199
+```
+
+| Scenario | ❌ Wrong (unique pageName) | ✅ Right (generic + properties) |
+|----------|---------------------------|--------------------------------|
+| Product pages | `"iPhone 15 Pro Detail"` | `pageName: "Product Detail"` + `productName` property |
+| User profiles | `"John Smith's Profile"` | `pageName: "User Profile"` + `profileUserId` property |
+| Article pages | `"How to Cook Pasta"` | `pageName: "Article"` + `articleTitle`, `articleCategory` properties |
+| Search results | `"Search: blue shoes"` | `pageName: "Search Results"` + `searchTerm` property |
+| Category pages | `"Men's Running Shoes"` | `pageName: "Category"` + `categoryName`, `categoryPath` properties |
+
+> **Think of it this way**: `pageName` defines the **type** of page (e.g., "Product Detail", "Checkout", "Search Results"). Properties describe the **specific instance** (which product, what search term, etc.). This gives you unlimited variation tracking while staying well under the 1,000 limit.
+
 ---
 
 ## API Reference
@@ -74,7 +105,40 @@ FS('setProperties', {
 
 | Field | Behavior |
 |-------|----------|
-| `pageName` | Creates a named Page for Journeys. Limited to 1,000 unique values. Takes precedence over URL-based page definitions. |
+| `pageName` | Creates a named Page used **across all of Fullstory** - not just Journeys. Limited to 1,000 unique values. Takes precedence over URL-based page definitions. |
+
+### Why pageName and Page Properties Matter Across Fullstory
+
+`pageName` and page properties aren't just for Journeys - they enrich **every event** that occurs on that page:
+
+| Fullstory Feature | How Page Properties Help |
+|-------------------|-------------------------|
+| **Search** | Find sessions where `pageName = "Checkout"` AND `cartValue > 500` |
+| **Segments** | Create segments like "Users who visited Product pages with priceRange = 'premium'" |
+| **Funnels** | Build funnels using pageName steps: "Home → Category → Product Detail → Cart → Checkout" |
+| **Journeys** | Map user flows across named pages |
+| **Metrics** | Track conversion rates per page type, filter by page properties |
+| **Dashboards** | Break down metrics by pageName or page properties |
+| **Event Analysis** | Every click, rage click, error on a page carries the page context |
+
+```javascript
+// When you set page properties...
+FS('setProperties', {
+  type: 'page',
+  properties: {
+    pageName: 'Product Detail',
+    productCategory: 'Electronics',
+    productPrice: 999,
+    inStock: true
+  }
+});
+
+// ...every subsequent event on this page (clicks, errors, custom events)
+// is automatically enriched with this context, enabling queries like:
+// - "Show me rage clicks on Product Detail pages where productPrice > 500"
+// - "Find errors on out-of-stock product pages"
+// - "Compare conversion rates: Electronics vs Clothing product pages"
+```
 
 ### Rate Limits
 
@@ -1028,15 +1092,15 @@ FS('setProperties', {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers implement Page Properties:
 
 1. **Always emphasize**:
-   - Include pageName for Journeys
-   - Use generic pageName values (max 1,000)
+   - Include pageName - it enriches ALL events on that page (not just Journeys)
+   - Use generic pageName values (max 1,000) + properties for variations
    - Re-set properties on SPA navigation
-   - Use page type for page-scoped data
+   - Page properties enable filtering across Search, Segments, Funnels, Metrics, and Dashboards
 
 2. **Common mistakes to watch for**:
    - Missing pageName property

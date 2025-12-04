@@ -27,9 +27,14 @@ When you call `FS('setIdentity', { anonymous: true })`, the current session ends
 ### What Happens When You Anonymize
 
 1. **Current session is closed** and marked as belonging to the identified user
-2. **New anonymous session begins** with a new session ID
-3. **Previous user data is preserved** - anonymizing doesn't delete history
-4. **Subsequent activity is anonymous** until a new `setIdentity` call
+2. **A new `fs_uid` cookie is generated** - breaking the link to all previous sessions
+3. **New anonymous session begins** with a new session ID and new cookie
+4. **Previous user data is preserved** - anonymizing doesn't delete history
+5. **Subsequent activity is anonymous** until a new `setIdentity` call
+
+> **Cookie Behavior**: Normally, the `fs_uid` first-party cookie (1-year expiry) links all sessions from the same browser together. When `anonymize` is called, Fullstory generates a **new** `fs_uid` cookie, effectively creating a "new device" from Fullstory's perspective. Any future `setIdentity` calls will only merge sessions from the new cookie, not the old one.
+>
+> **Reference**: [Why Fullstory uses First-Party Cookies](https://help.fullstory.com/hc/en-us/articles/360020829513-Why-Fullstory-uses-First-Party-Cookies)
 
 ### Session Lifecycle
 
@@ -716,7 +721,7 @@ FS('setIdentity', {                       // Start session 2
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers implement User Anonymization:
 

@@ -19,7 +19,7 @@ related_skills:
 
 ## Overview
 
-Fullstory's Analytics Events API allows developers to send custom instrumented event data that captures meaningful user actions and business moments. Unlike automatic capture which records all interactions, `trackEvent` lets you define semantically meaningful events with rich context that can be used for:
+Fullstory's Analytics Events API allows developers to send custom event data that captures meaningful user actions and business moments. Unlike automatic capture which records all interactions, `trackEvent` lets you define semantically meaningful events with rich context that can be used for:
 
 - **Funnel Analysis**: Track conversion steps and drop-off points
 - **Feature Adoption**: Measure feature usage and engagement
@@ -1085,7 +1085,7 @@ try {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers implement Analytics Events:
 

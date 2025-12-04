@@ -662,7 +662,7 @@ await safeFS('trackEventAsync', {
 
 ```javascript
 // Track FullStory initialization status
-class FSStatusManager {
+class CaptureStatusManager {
   constructor() {
     this.status = 'pending';
     this.sessionUrl = null;
@@ -702,7 +702,7 @@ class FSStatusManager {
 }
 
 // Global instance
-const fsStatus = new FSStatusManager();
+const fsStatus = new CaptureStatusManager();
 
 // Initialize once
 fsStatus.initialize();
@@ -827,7 +827,7 @@ class AnalyticsQueue {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers with Async Methods:
 

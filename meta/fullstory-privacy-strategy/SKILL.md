@@ -10,7 +10,7 @@ related_skills:
   - fullstory-analytics-events
   - fullstory-banking
   - fullstory-healthcare
-  - fullstory-gambling
+  - fullstory-gaming
   - fullstory-ecommerce
   - fullstory-saas
   - fullstory-travel
@@ -30,6 +30,62 @@ This guide provides strategic guidance for implementing privacy-conscious Fullst
 - How to balance analytics value with privacy protection
 
 **Remember**: FullStory is a tool for understanding user experience, NOT a database for storing customer data. Send only what's needed for analysis.
+
+---
+
+## Fullstory's Privacy Architecture
+
+### First-Party Cookies (Not Third-Party)
+
+Fullstory uses **first-party cookies** set on YOUR domain, which provides inherent privacy benefits:
+
+| Privacy Aspect | Fullstory Approach |
+|----------------|-------------------|
+| **Cookie Domain** | Set on YOUR domain (e.g., `yoursite.com`), not Fullstory's |
+| **Cross-Site Tracking** | ❌ Impossible - each site has its own isolated `fs_uid` cookie |
+| **Data Isolation** | Your user data is completely isolated from other Fullstory customers |
+| **Browser Compatibility** | ✅ First-party cookies aren't blocked by browsers or ad-blockers |
+| **User Control** | Users can clear cookies to reset their identity on your site |
+
+> **Key Privacy Guarantee**: A user's identity CANNOT be connected across different sites using Fullstory. If the same person visits Site A and Site B (both using Fullstory), they have separate, unlinked identities on each site.
+
+### Cookie Transparency
+
+| Cookie | Duration | Purpose | User Impact |
+|--------|----------|---------|-------------|
+| `fs_uid` | 1 year | Links sessions from same browser | Can clear to "start fresh" |
+| `fs_cid` | 1 year | Stores consent state | Remembers consent choice |
+| `fs_lua` | 30 min | Last activity timestamp | Session timeout management |
+
+> **Reference**: [Why Fullstory uses First-Party Cookies](https://help.fullstory.com/hc/en-us/articles/360020829513-Why-Fullstory-uses-First-Party-Cookies)
+
+### Private by Default Mode
+
+Fullstory offers a **Private by Default** mode—a privacy-first capture approach that inverts the default behavior:
+
+| Mode | Default Behavior | Best For |
+|------|------------------|----------|
+| **Standard** | Capture everything, add fs-mask/fs-exclude to protect | Low-sensitivity sites |
+| **Private by Default** | Mask everything, add fs-unmask to reveal | High-sensitivity applications |
+
+**How Private by Default Works:**
+1. **All text is masked by default** - No text captured unless explicitly unmasked
+2. **Zero accidental exposure** - Impossible to accidentally capture sensitive data
+3. **Selective unmasking** - Add `.fs-unmask` to navigation, buttons, product names
+4. **Session replay shows wireframes** - See user behavior without seeing data
+
+**Recommended for:**
+- ✅ Healthcare applications (HIPAA)
+- ✅ Banking/financial services (PCI, GLBA)
+- ✅ Multi-tenant SaaS (customer data protection)
+- ✅ Enterprise applications
+- ✅ Any application where "default open" is too risky
+
+**Enable via:**
+- **New accounts**: Select during onboarding wizard
+- **Existing accounts**: Contact Fullstory Support
+
+> **Reference**: [Fullstory Private by Default](https://help.fullstory.com/hc/en-us/articles/360044349073-Fullstory-Private-by-Default)
 
 ---
 
@@ -609,7 +665,7 @@ Use this checklist before launch and periodically:
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers with privacy strategy:
 

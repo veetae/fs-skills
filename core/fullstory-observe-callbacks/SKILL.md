@@ -971,7 +971,7 @@ unsubscribe();
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers with Observer API:
 

@@ -1,7 +1,7 @@
 ---
 name: fullstory-stable-selectors
 version: v2
-description: Framework-agnostic guide for implementing stable selectors in any web application. Solves the dynamic class name problem caused by CSS-in-JS, CSS Modules, and build tools by teaching developers to add semantic data-* attributes. Includes implementation patterns for React, Angular, Vue, Svelte, and vanilla JavaScript. This skill replaces the need for framework-specific plugins.
+description: Framework-agnostic guide for implementing stable, semantic selectors in any web application. Solves the dynamic class name problem caused by CSS-in-JS, CSS Modules, and build tools. Includes patterns for React, Angular, Vue, Svelte, Next.js, Astro, and more. Future-proofed for Computer User Agents (CUA) and AI-powered automation tools. Provides TypeScript patterns, naming taxonomies, and enterprise-scale conventions.
 related_skills:
   - fullstory-element-properties
   - fullstory-privacy-controls
@@ -13,11 +13,16 @@ related_skills:
 
 ## Overview
 
-Modern web applications use build tools and CSS methodologies that generate dynamic, unpredictable class names. This creates a challenge for Fullstory: how do you reliably target elements for search, defined elements, and click maps when class names change on every build?
+Modern web applications use build tools and CSS methodologies that generate dynamic, unpredictable class names. This creates challenges for:
+
+1. **Fullstory**: Reliable search, defined elements, click maps
+2. **Automated Testing**: Stable E2E test selectors
+3. **Computer User Agents (CUA)**: AI agents navigating your interface
+4. **Accessibility Tools**: Programmatic element identification
 
 **The Solution**: Add stable, semantic `data-*` attributes that describe **what** the element is, not how it's styled.
 
-This skill teaches you how to implement stable selectors in **any framework** without requiring external plugins.
+This skill teaches you how to implement stable selectors in **any framework** without requiring external plugins—and future-proofs your application for AI-powered tooling.
 
 ---
 
@@ -41,11 +46,49 @@ This skill teaches you how to implement stable selectors in **any framework** wi
 - ❌ Component libraries (internal naming conventions)
 - ❌ Shadow DOM / Web Components (encapsulated styles)
 
-**Impact on Fullstory:**
-- ❌ Searches by class name break after deployments
-- ❌ Defined elements stop matching
-- ❌ Click maps lose data continuity
-- ❌ Segments and metrics become unreliable
+**Impact:**
+
+| Tool | Problem |
+|------|---------|
+| **Fullstory** | Searches break, defined elements stop matching, click maps lose continuity |
+| **E2E Testing** | Cypress/Playwright tests become brittle |
+| **AI Agents (CUA)** | Cannot reliably identify interactive elements |
+| **Automation** | Scripts break on every deployment |
+
+---
+
+## Why This Matters for AI Agents (CUA)
+
+Computer User Agents—AI systems that interact with web interfaces—rely on stable, semantic identifiers to understand and navigate your application.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  HOW CUAs "SEE" YOUR INTERFACE                                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ❌ BRITTLE (AI struggles):                                             │
+│     <button class="sc-3d8f2a btn_primary__xK7n2">Buy Now</button>      │
+│                                                                         │
+│  ✅ SEMANTIC (AI understands):                                          │
+│     <button                                                             │
+│       data-component="ProductCard"                                      │
+│       data-element="purchase-button"                                    │
+│       data-action="add-to-cart"                                        │
+│       aria-label="Add to cart"                                          │
+│     >Buy Now</button>                                                   │
+│                                                                         │
+│  The AI can now reliably:                                               │
+│  • Find "the purchase button in ProductCard"                           │
+│  • Understand the action it will trigger                               │
+│  • Maintain stable automation across deployments                        │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Stable selectors provide CUAs with:**
+- ✅ Consistent element identification across builds
+- ✅ Semantic understanding of element purpose
+- ✅ Hierarchical context (component → element relationship)
+- ✅ Action hints for interaction planning
 
 ---
 
@@ -79,38 +122,142 @@ Add stable `data-*` attributes that survive build changes:
 
 ## Core Concepts
 
-### The Three Standard Attributes
+### The Attribute Taxonomy
+
+#### Primary Attributes (Required)
+
+| Attribute | Purpose | Case | Example |
+|-----------|---------|------|---------|
+| `data-component` | Component boundary identifier | PascalCase | `ProductCard`, `CheckoutForm` |
+| `data-element` | Element role within component | kebab-case | `add-to-cart`, `price-display` |
+
+#### Extended Attributes (Recommended for CUA/AI)
 
 | Attribute | Purpose | When to Use |
 |-----------|---------|-------------|
-| `data-component` | Names the component that owns this element | Root element of each component |
-| `data-element` | Names the element's role within the component | Interactive elements, key UI parts |
-| `data-source-file` | References the source file (optional) | Debugging, development |
+| `data-action` | Describes what happens on interaction | Buttons, links, toggles |
+| `data-state` | Current state of the element | Expandable, toggleable elements |
+| `data-variant` | Visual or functional variant | A/B tests, feature flags |
+| `data-testid` | Unified test/automation identifier | When aligning with E2E tests |
+
+#### Development Attributes (Strip in Production)
+
+| Attribute | Purpose |
+|-----------|---------|
+| `data-source-file` | Source file reference for debugging |
+| `data-source-line` | Line number for debugging |
 
 ### Attribute Hierarchy
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  data-component                                                  │
-│  • Identifies which component this element belongs to            │
-│  • Set on the root element of each component                     │
-│  • Example: "ProductCard", "CheckoutForm", "NavBar"              │
-├─────────────────────────────────────────────────────────────────┤
-│  data-element                                                    │
-│  • Identifies the element's purpose within the component         │
-│  • Set on interactive elements and key UI elements               │
-│  • Example: "add-to-cart", "search-input", "price-display"       │
-├─────────────────────────────────────────────────────────────────┤
-│  data-source-file (Optional)                                     │
-│  • References the source file for debugging                      │
-│  • Can be stripped in production builds                          │
-│  • Example: "ProductCard.tsx", "checkout/Form.vue"               │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│  SEMANTIC HIERARCHY                                                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  data-component="CheckoutForm"                    ← Component boundary  │
+│  │                                                                      │
+│  ├── data-element="shipping-section"              ← Structural element  │
+│  │   ├── data-element="address-input"             ← Interactive element │
+│  │   └── data-element="city-input"                                      │
+│  │                                                                      │
+│  ├── data-element="payment-section"                                     │
+│  │   └── data-element="card-input" + data-action="capture-payment"     │
+│  │                                                                      │
+│  └── data-element="submit-button"                                       │
+│      + data-action="complete-purchase"            ← Action hint for AI  │
+│      + data-state="enabled|disabled|loading"      ← Current state       │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Aligning with Testing Tools
+
+Many teams already use `data-testid` for Cypress/Playwright. You can unify:
+
+```html
+<!-- Option 1: Use both (redundant but safe) -->
+<button 
+  data-element="add-to-cart"
+  data-testid="add-to-cart-button"
+>Add</button>
+
+<!-- Option 2: Configure test tools to use data-element -->
+// cypress.config.js
+Cypress.SelectorPlayground.defaults({
+  selectorPriority: ['data-element', 'data-component', 'data-testid', 'id']
+});
+
+// playwright.config.js
+use: {
+  testIdAttribute: 'data-element'
+}
+```
+
+### Integration with ARIA (Accessibility + AI)
+
+Stable selectors complement ARIA attributes—use both:
+
+```html
+<button
+  data-component="ProductCard"
+  data-element="add-to-cart"
+  data-action="add-item"
+  aria-label="Add Wireless Headphones to cart"
+  aria-describedby="price-123"
+>
+  Add to Cart
+</button>
+```
+
+| Attribute Type | Purpose | Audience |
+|----------------|---------|----------|
+| `data-*` selectors | Stable programmatic targeting | Fullstory, Tests, AI Agents |
+| `aria-*` attributes | Semantic meaning & relationships | Screen readers, AI understanding |
+| `role` attribute | Element type override | Accessibility, AI categorization |
+
+> **CUA Best Practice**: AI agents use BOTH data-* attributes for reliable targeting AND aria-* attributes for understanding element purpose and relationships.
 
 ---
 
 ## Naming Conventions
+
+### Formal Naming Grammar
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  NAMING GRAMMAR                                                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  data-component: [Namespace.]<Domain><Type>                             │
+│                                                                         │
+│    Examples:                                                            │
+│    • ProductCard         (simple)                                       │
+│    • CheckoutPaymentForm (domain + type)                               │
+│    • Checkout.PaymentForm (namespaced for micro-frontends)             │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  data-element: <subject>-<descriptor>[-<qualifier>]                     │
+│                                                                         │
+│    Examples:                                                            │
+│    • add-to-cart         (action verb)                                  │
+│    • product-image       (subject + type)                              │
+│    • shipping-address-input (subject + descriptor + type)              │
+│    • nav-item-products   (type + qualifier)                            │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  data-action: <verb>[-<object>]                                         │
+│                                                                         │
+│    Examples:                                                            │
+│    • add-item                                                           │
+│    • submit-form                                                        │
+│    • toggle-menu                                                        │
+│    • expand-details                                                     │
+│    • navigate-next                                                      │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
 ### Component Names (`data-component`)
 
@@ -122,6 +269,10 @@ Use **PascalCase** matching your component/class names:
 <div data-component="CheckoutForm">
 <div data-component="NavigationHeader">
 <div data-component="UserProfileDropdown">
+
+<!-- ✅ GOOD: Namespaced for micro-frontends -->
+<div data-component="Checkout.PaymentForm">
+<div data-component="Catalog.ProductCard">
 
 <!-- ❌ BAD: Generic names -->
 <div data-component="Container">
@@ -142,12 +293,32 @@ Use **kebab-case** describing the element's purpose:
 <span data-element="price-display">
 <nav data-element="main-navigation">
 
+<!-- ✅ GOOD: Qualified names for disambiguation -->
+<input data-element="billing-address-line1">
+<input data-element="shipping-address-line1">
+
 <!-- ❌ BAD: Describes appearance or position -->
 <button data-element="blue-button">
 <button data-element="big-button">
 <button data-element="button-1">
 <button data-element="first-button">
 <div data-element="left-sidebar">
+```
+
+### Action Names (`data-action`)
+
+Use **verb-first kebab-case** describing the outcome:
+
+```html
+<!-- ✅ GOOD: Clear action verbs -->
+<button data-action="add-item">Add to Cart</button>
+<button data-action="submit-order">Complete Purchase</button>
+<button data-action="toggle-filter">Show Filters</button>
+<a data-action="navigate-category">View All</a>
+
+<!-- ❌ BAD: Nouns or unclear -->
+<button data-action="cart">Add to Cart</button>
+<button data-action="click-handler">Submit</button>
 ```
 
 ### What to Annotate
@@ -367,6 +538,7 @@ app.directive('fs', {
   
   <button 
     data-element="add-to-cart"
+    data-action="add-item"
     on:click={() => dispatch('addToCart', product)}
   >
     Add to Cart
@@ -378,6 +550,154 @@ app.directive('fs', {
   export let product;
   const dispatch = createEventDispatcher();
 </script>
+```
+
+---
+
+### Next.js (App Router / React Server Components)
+
+Server components work identically—data attributes render to HTML:
+
+```tsx
+// app/products/[id]/page.tsx (Server Component)
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  const product = await getProduct(params.id);
+  
+  return (
+    <main data-component="ProductPage" data-element="page">
+      <ProductDetails product={product} />
+      <AddToCartButton productId={product.id} />
+    </main>
+  );
+}
+
+// Client component with interactivity
+'use client';
+function AddToCartButton({ productId }: { productId: string }) {
+  const [loading, setLoading] = useState(false);
+  
+  return (
+    <button
+      data-component="AddToCartButton"
+      data-element="trigger"
+      data-action="add-to-cart"
+      data-state={loading ? 'loading' : 'idle'}
+      data-product-id={productId}
+      onClick={handleClick}
+    >
+      {loading ? 'Adding...' : 'Add to Cart'}
+    </button>
+  );
+}
+```
+
+---
+
+### Astro (Islands Architecture)
+
+```astro
+---
+// ProductCard.astro
+const { product } = Astro.props;
+---
+
+<article 
+  data-component="ProductCard"
+  data-element="card"
+  data-product-id={product.id}
+>
+  <img src={product.image} data-element="product-image" />
+  <h3 data-element="product-name">{product.name}</h3>
+  
+  <!-- Interactive island -->
+  <AddToCartButton client:visible productId={product.id} />
+</article>
+```
+
+---
+
+### Solid.js
+
+```tsx
+// ProductCard.tsx
+function ProductCard(props: { product: Product }) {
+  return (
+    <article data-component="ProductCard" data-element="card">
+      <img src={props.product.image} data-element="product-image" />
+      <h3 data-element="product-name">{props.product.name}</h3>
+      <button
+        data-element="add-to-cart"
+        data-action="add-item"
+        onClick={() => addToCart(props.product)}
+      >
+        Add to Cart
+      </button>
+    </article>
+  );
+}
+```
+
+---
+
+### TypeScript Type-Safe Selectors
+
+Create compile-time safety for your selector values:
+
+```typescript
+// selectors.ts
+
+// Define your component names as a union type
+type ComponentName = 
+  | 'ProductCard'
+  | 'CheckoutForm'
+  | 'NavigationHeader'
+  | 'UserProfile'
+  | 'CartDrawer';
+
+// Define element names per component
+type ElementName<C extends ComponentName> = 
+  C extends 'ProductCard' ? 'card' | 'product-image' | 'product-name' | 'price' | 'add-to-cart' :
+  C extends 'CheckoutForm' ? 'form' | 'shipping-section' | 'payment-section' | 'submit-button' :
+  C extends 'CartDrawer' ? 'drawer' | 'item-list' | 'total' | 'checkout-button' :
+  string;
+
+// Type-safe selector builder
+interface StableSelectors<C extends ComponentName> {
+  'data-component': C;
+  'data-element'?: ElementName<C>;
+  'data-action'?: string;
+  'data-state'?: string;
+}
+
+// Factory function
+export function createSelectors<C extends ComponentName>(
+  component: C
+): {
+  root: StableSelectors<C>;
+  element: (name: ElementName<C>, action?: string) => Partial<StableSelectors<C>>;
+} {
+  return {
+    root: { 'data-component': component },
+    element: (name, action) => ({
+      'data-element': name,
+      ...(action && { 'data-action': action })
+    })
+  };
+}
+
+// Usage
+function ProductCard({ product }: Props) {
+  const sel = createSelectors('ProductCard');
+  
+  return (
+    <div {...sel.root} {...sel.element('card')}>
+      {/* TypeScript will error if you use 'invalid-element' */}
+      <button {...sel.element('add-to-cart', 'add-item')}>
+        Add to Cart
+      </button>
+    </div>
+  );
+}
 ```
 
 ---
@@ -665,6 +985,199 @@ Stable selectors and Element Properties work together:
 
 ---
 
+## Advanced Patterns
+
+### Virtualized Lists / Infinite Scroll
+
+For virtualized content where DOM elements are recycled:
+
+```tsx
+// React with react-window or react-virtualized
+function VirtualizedProductList({ products }) {
+  return (
+    <div data-component="ProductList" data-element="virtual-container">
+      <FixedSizeList
+        height={600}
+        itemCount={products.length}
+        itemSize={120}
+      >
+        {({ index, style }) => (
+          <div
+            style={style}
+            data-element="product-row"
+            data-row-index={index}
+            data-product-id={products[index].id}  // Stable ID, not position!
+          >
+            <ProductCard product={products[index]} />
+          </div>
+        )}
+      </FixedSizeList>
+    </div>
+  );
+}
+```
+
+**Key Principle**: Use stable business identifiers (`data-product-id`), not positional indices.
+
+---
+
+### Shadow DOM / Web Components
+
+Shadow DOM encapsulates styles but data attributes still work:
+
+```javascript
+class ProductCard extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+  }
+  
+  connectedCallback() {
+    // Set attributes on the host element (light DOM)
+    this.setAttribute('data-component', 'ProductCard');
+    this.setAttribute('data-element', 'card');
+    
+    // Shadow DOM content also gets attributes
+    this.shadowRoot.innerHTML = `
+      <style>/* encapsulated styles */</style>
+      <article>
+        <slot name="image"></slot>
+        <button data-element="add-to-cart" data-action="add-item">
+          <slot name="button-text">Add to Cart</slot>
+        </button>
+      </article>
+    `;
+  }
+}
+
+// For Fullstory to see shadow DOM content, enable deep capture:
+// FS.setProperties({ type: 'page', properties: { shadowDomEnabled: true } });
+```
+
+**Fullstory Note**: Contact Fullstory support about Shadow DOM capture configuration for your account.
+
+---
+
+### Micro-Frontends
+
+When multiple teams own different parts of the UI, namespace your selectors:
+
+```html
+<!-- Team Checkout owns this -->
+<div 
+  data-component="Checkout.PaymentForm"
+  data-team="checkout"
+  data-element="form"
+>
+  <button data-element="submit-payment">Pay</button>
+</div>
+
+<!-- Team Catalog owns this -->
+<div 
+  data-component="Catalog.ProductCard"
+  data-team="catalog"
+  data-element="card"
+>
+  <button data-element="add-to-cart">Add</button>
+</div>
+```
+
+**Namespace Convention**: `{Team}.{Component}` prevents collisions.
+
+---
+
+### A/B Tests and Feature Flags
+
+Track variants for analysis:
+
+```html
+<!-- Variant A: Original -->
+<button
+  data-component="CTAButton"
+  data-element="hero-cta"
+  data-variant="control"
+  data-experiment="homepage-cta-2024"
+>
+  Get Started
+</button>
+
+<!-- Variant B: Test -->
+<button
+  data-component="CTAButton"
+  data-element="hero-cta"
+  data-variant="treatment-green"
+  data-experiment="homepage-cta-2024"
+>
+  Start Free Trial
+</button>
+```
+
+**In Fullstory**: Search by `[data-experiment="homepage-cta-2024"][data-variant="treatment-green"]` to analyze specific variants.
+
+---
+
+### Dynamic/Lazy-Loaded Content
+
+Ensure selectors are present when content loads:
+
+```tsx
+// React with Suspense
+function ProductDetails({ productId }) {
+  return (
+    <Suspense 
+      fallback={
+        <div 
+          data-component="ProductDetails" 
+          data-element="skeleton" 
+          data-state="loading"
+        >
+          Loading...
+        </div>
+      }
+    >
+      <ProductDetailsContent productId={productId} />
+    </Suspense>
+  );
+}
+
+function ProductDetailsContent({ productId }) {
+  const product = use(fetchProduct(productId));
+  
+  return (
+    <div 
+      data-component="ProductDetails" 
+      data-element="content"
+      data-state="loaded"
+      data-product-id={productId}
+    >
+      {/* content */}
+    </div>
+  );
+}
+```
+
+**Note**: The `data-state` attribute helps distinguish loading vs loaded states in Fullstory searches.
+
+---
+
+### Iframes (Cross-Origin Limitations)
+
+For same-origin iframes, selectors work normally. For cross-origin:
+
+```html
+<!-- Parent page -->
+<iframe 
+  src="https://checkout.example.com/embed"
+  data-component="CheckoutEmbed"
+  data-element="iframe"
+  title="Checkout"
+></iframe>
+```
+
+**Limitation**: Fullstory cannot directly capture cross-origin iframe content. The iframe must have its own Fullstory snippet installed.
+
+---
+
 ## Best Practices
 
 ### 1. Annotate at Development Time
@@ -784,44 +1297,97 @@ optimization: {
 
 ---
 
-## KEY TAKEAWAYS FOR CLAUDE
+## KEY TAKEAWAYS FOR AGENT
 
 When helping developers implement stable selectors:
 
-1. **Framework-agnostic solution**: Works in React, Angular, Vue, Svelte, vanilla JS, server-side templates
-2. **Two attributes are key**: `data-component` (PascalCase) and `data-element` (kebab-case)
-3. **Name by purpose, not appearance**: "add-to-cart" not "blue-button"
-4. **Annotate interactive elements**: Buttons, inputs, links, cards in lists
-5. **Combine with Element Properties**: Stable selectors for search, Element Properties for analytics data
-6. **No plugins required**: Manual annotation works everywhere
+### Core Principles
+
+1. **Framework-agnostic solution**: Works in React, Angular, Vue, Svelte, Next.js, Astro, vanilla JS, server-side templates
+2. **Primary attributes**: `data-component` (PascalCase) and `data-element` (kebab-case)
+3. **Extended attributes for AI/CUA**: `data-action`, `data-state`, `data-variant`
+4. **Name by purpose, not appearance**: "add-to-cart" not "blue-button"
+5. **Annotate interactive elements**: Buttons, inputs, links, cards in lists
+6. **Combine with Element Properties**: Stable selectors for search, Element Properties for analytics data
+7. **Combine with ARIA**: Use both data-* and aria-* for maximum AI/accessibility compatibility
+8. **No plugins required**: Manual annotation works everywhere
+
+### CUA/AI Agent Considerations
+
+- **`data-action`**: Helps AI understand what interaction will do ("add-item", "submit-form", "toggle-menu")
+- **`data-state`**: Helps AI understand current element state ("loading", "disabled", "expanded")
+- **ARIA integration**: Ensure `aria-label` provides human-readable context alongside data-* targeting
+- **Consistent naming**: AI agents learn patterns—be consistent across your codebase
 
 ### Questions to Ask Developers
 
-1. "What framework are you using?"
-2. "Are your class names dynamic? (CSS Modules, styled-components, etc.)"
+1. "What framework are you using?" (React, Vue, Angular, Next.js, Astro, etc.)
+2. "Are your class names dynamic?" (CSS Modules, styled-components, Tailwind)
 3. "What elements do you need to reliably search for in Fullstory?"
 4. "Do you have a component naming convention already?"
+5. "Are you using E2E testing tools?" (May want to align with data-testid)
+6. "Do you use micro-frontends or multiple teams?" (Need namespace strategy)
+7. "Is AI/automation tooling on your roadmap?" (Add extended attributes now)
 
 ### Implementation Checklist
 
 ```markdown
+Phase 1: Core Implementation
 □ Identify interactive elements that need tracking
-□ Add data-component to component root elements
+□ Add data-component to component root elements  
 □ Add data-element to buttons, inputs, links, cards
-□ Use specific, purpose-based names
+□ Use specific, purpose-based names (not appearance/position)
 □ Test selectors in browser DevTools
 □ Verify attributes survive production build
 □ Create defined elements in Fullstory using data-* selectors
+
+Phase 2: AI/CUA Readiness (Recommended)
+□ Add data-action to buttons and interactive elements
+□ Add data-state for elements with multiple states
+□ Ensure ARIA attributes complement data-* selectors
+□ Document naming conventions for team consistency
+
+Phase 3: Enterprise Scale (If Applicable)
+□ Implement TypeScript type-safe selectors
+□ Add namespace prefixes for micro-frontends
+□ Add data-variant for A/B test tracking
+□ Configure E2E tools to use data-element
 ```
+
+### Selector Evolution Strategy
+
+When you need to change selectors:
+
+1. **Add new selector alongside old** (don't remove immediately)
+2. **Update Fullstory defined elements** to use new selector
+3. **Verify data continuity** in Fullstory dashboards
+4. **Remove old selector** after confirming migration
 
 ---
 
 ## REFERENCE LINKS
 
-- **Fullstory CSS Selectors**: https://help.fullstory.com/hc/en-us/articles/360020623294
+### Fullstory Documentation
+- **CSS Selectors in Search**: https://help.fullstory.com/hc/en-us/articles/360020623294
 - **Defined Elements**: https://help.fullstory.com/hc/en-us/articles/360020828113
-- **Element Properties**: ../core/fullstory-element-properties/SKILL.md
+- **Element Properties Guide**: ../core/fullstory-element-properties/SKILL.md
+
+### Testing Tool Integration
+- **Cypress Best Practices (Selecting Elements)**: https://docs.cypress.io/guides/references/best-practices#Selecting-Elements
+- **Playwright Locators**: https://playwright.dev/docs/locators
+- **Testing Library Queries**: https://testing-library.com/docs/queries/about
+
+### Accessibility & AI
+- **WAI-ARIA Authoring Practices**: https://www.w3.org/WAI/ARIA/apg/
+- **MDN: Using Data Attributes**: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+
+### Historical Context
+These skills consolidate and extend patterns from:
+- `fullstorydev/eslint-plugin-annotate-react` (React-specific)
+- `fullstorydev/fullstory-babel-plugin-annotate-react` (Build-time injection)
+
+The manual approach in this skill is more flexible and works across all frameworks.
 
 ---
 
-*This skill provides a universal pattern for stable selectors that works in any framework. No external plugins required.*
+*This skill provides a universal, future-proof pattern for stable selectors that works in any framework. Optimized for Fullstory analytics, E2E testing, and AI-powered Computer User Agents. No external plugins required.*
