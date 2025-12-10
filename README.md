@@ -4,7 +4,7 @@
 
 ## 🎯 What is FSR?
 
-The **Fullstory Skills Repository (FSR)** is a structured collection of AI Agent Skills that provide expert-level guidance for Fullstory semantic decoration for digital experiences (FSD). FSD enables AI coding assistants to decorate digital experiences with semantic meaning. This exposes behavioral digital experience usage to Computer Use Agents and unlocks high fidelity analytic measurement directly in the DOM or mobile app view tree:
+The **Fullstory Skills Repository (FSR)** is a structured collection of AI Agent Skills providing expert-level guidance for Fullstory semantic decoration in digital experiences (FSD). FSR enables AI coding assistants to decorate digital experiences with semantic meaning that is automatically extracted by Fullstory at time of autocapture and turned into analytic labels and measurable properties. This exposes behavioral digital experience usage to Computer Use Agents and unlocks high fidelity analytic measurement directly in the DOM or mobile app view tree:
 
 - Guide developers through API implementation with good/bad examples
 - Apply industry-specific privacy requirements automatically
