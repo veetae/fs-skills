@@ -1594,6 +1594,451 @@ func setupProduct(_ product: Product) {
 
 ---
 
+## FLUTTER IMPLEMENTATION
+
+### Basic Syntax
+Element properties are set using the `FSCustomAttributes` widget wrapper:
+
+**Dart:**
+```dart
+import 'package:fullstory_capture/fullstory_capture.dart';
+
+FSCustomAttributes(
+  classes: ['class1', 'class2'],
+  attributes: {'field1': 'value1'},
+  child: YourWidget(),
+)
+```
+
+### ✅ GOOD FLUTTER IMPLEMENTATION EXAMPLES
+
+#### Example 1: Product Card with Comprehensive Properties
+```dart
+// GOOD: Complete product card implementation with proper typing
+import 'package:fullstory_capture/fullstory_capture.dart';
+import 'package:flutter/material.dart';
+import 'dart:convert';
+
+class ProductCard extends StatelessWidget {
+  final Product product;
+  
+  const ProductCard({Key? key, required this.product}) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    return FSCustomAttributes(
+      classes: ['product-card'],
+      attributes: {
+        'data-product-id': product.id,
+        'data-product-name': product.name,
+        'data-category': product.category,
+        'data-price': product.price.toString(),
+        'data-stock-level': product.stockLevel.toString(),
+        'data-rating': product.rating.toString(),
+        'data-on-sale': product.isOnSale.toString(),
+        'data-launch-date': product.launchDate.toIso8601String(),
+        'data-fs-properties-schema': _buildSchema(),
+        'data-fs-element': 'Product Card',
+      },
+      child: Card(
+        child: Column(
+          children: [
+            Text(product.name),
+            ElevatedButton(
+              onPressed: () {},
+              child: FSCustomAttributes(
+                classes: ['add-to-cart-button'],
+                attributes: {
+                  'data-fs-element': 'Add to Cart Button',
+                },
+                child: const Text('Add to Cart'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  String _buildSchema() {
+    return jsonEncode({
+      'data-product-id': {
+        'type': 'str',
+        'name': 'productId',
+      },
+      'data-product-name': {
+        'type': 'str',
+        'name': 'productName',
+      },
+      'data-category': {
+        'type': 'str',
+        'name': 'category',
+      },
+      'data-price': {
+        'type': 'real',
+        'name': 'price',
+      },
+      'data-stock-level': {
+        'type': 'int',
+        'name': 'stockLevel',
+      },
+      'data-rating': {
+        'type': 'real',
+        'name': 'rating',
+      },
+      'data-on-sale': {
+        'type': 'bool',
+        'name': 'isOnSale',
+      },
+      'data-launch-date': {
+        'type': 'date',
+        'name': 'launchDate',
+      },
+    });
+  }
+}
+```
+
+**Why this is good:**
+- ✅ Proper type conversions (toString() for numbers/booleans)
+- ✅ Clean property names via the `name` field in schema
+- ✅ Uses jsonEncode for safe schema construction
+- ✅ Child button inherits parent properties automatically
+- ✅ Includes element naming for both parent and child
+- ✅ Proper ISO8601 date formatting
+
+#### Example 2: Form with Field-Level Properties
+```dart
+// GOOD: Comprehensive form tracking with hierarchy
+import 'package:fullstory_capture/fullstory_capture.dart';
+import 'package:flutter/material.dart';
+import 'dart:convert';
+
+class CheckoutForm extends StatelessWidget {
+  final String userTier;
+  final double cartTotal;
+  
+  const CheckoutForm({
+    Key? key,
+    required this.userTier,
+    required this.cartTotal,
+  }) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    return FSCustomAttributes(
+      classes: ['checkout-form'],
+      attributes: {
+        'data-form-type': 'checkout',
+        'data-form-step': 'payment',
+        'data-user-tier': userTier,
+        'data-total-amount': cartTotal.toString(),
+        'data-fs-properties-schema': _buildFormSchema(),
+        'data-fs-element': 'Checkout Form',
+      },
+      child: Column(
+        children: [
+          FSCustomAttributes(
+            classes: ['form-field'],
+            attributes: {
+              'data-field-name': 'cardNumber',
+              'data-field-required': 'true',
+              'data-field-type': 'credit-card',
+              'data-max-length': '16',
+              'data-fs-properties-schema': _buildFieldSchema(),
+              'data-fs-element': 'Card Number Field',
+            },
+            child: TextField(
+              decoration: const InputDecoration(
+                labelText: 'Card Number',
+              ),
+            ),
+          ),
+          FSCustomAttributes(
+            classes: ['submit-button'],
+            attributes: {
+              'data-button-type': 'primary',
+              'data-button-action': 'submit-payment',
+              'data-fs-properties-schema': _buildButtonSchema(),
+              'data-fs-element': 'Submit Payment Button',
+            },
+            child: ElevatedButton(
+              onPressed: () {},
+              child: const Text('Complete Purchase'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _buildFormSchema() {
+    return jsonEncode({
+      'data-form-type': {'type': 'str', 'name': 'formType'},
+      'data-form-step': {'type': 'str', 'name': 'checkoutStep'},
+      'data-user-tier': {'type': 'str', 'name': 'userTier'},
+      'data-total-amount': {'type': 'real', 'name': 'cartTotal'},
+    });
+  }
+  
+  String _buildFieldSchema() {
+    return jsonEncode({
+      'data-field-name': {'type': 'str', 'name': 'fieldName'},
+      'data-field-required': {'type': 'bool', 'name': 'isRequired'},
+      'data-field-type': {'type': 'str', 'name': 'fieldType'},
+      'data-max-length': {'type': 'int', 'name': 'maxLength'},
+    });
+  }
+  
+  String _buildButtonSchema() {
+    return jsonEncode({
+      'data-button-type': 'str',
+      'data-button-action': {'type': 'str', 'name': 'buttonAction'},
+    });
+  }
+}
+```
+
+**Why this is good:**
+- ✅ Clear hierarchy: form properties inherited by all children
+- ✅ Each element has context-specific properties
+- ✅ Proper type conversions throughout
+- ✅ All interactions capture full context
+- ✅ Reusable schema building methods
+
+#### Example 3: List View with Dynamic Content
+```dart
+// GOOD: Handling dynamic list items in ListView
+import 'package:fullstory_capture/fullstory_capture.dart';
+import 'package:flutter/material.dart';
+import 'dart:convert';
+
+class ProductList extends StatelessWidget {
+  final List<Product> products;
+  
+  const ProductList({Key? key, required this.products}) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: products.length,
+      itemBuilder: (context, index) {
+        final product = products[index];
+        return FSCustomAttributes(
+          classes: ['product-list-item'],
+          attributes: {
+            'data-product-id': product.id,
+            'data-product-name': product.name,
+            'data-price': product.price.toString(),
+            'data-in-stock': product.isInStock.toString(),
+            'data-position': index.toString(),
+            'data-fs-properties-schema': _buildItemSchema(),
+            'data-fs-element': 'Product List Item',
+          },
+          child: ListTile(
+            title: Text(product.name),
+            subtitle: Text('\$${product.price}'),
+          ),
+        );
+      },
+    );
+  }
+  
+  String _buildItemSchema() {
+    return jsonEncode({
+      'data-product-id': {'type': 'str', 'name': 'productId'},
+      'data-product-name': {'type': 'str', 'name': 'productName'},
+      'data-price': {'type': 'real', 'name': 'price'},
+      'data-in-stock': {'type': 'bool', 'name': 'inStock'},
+      'data-position': {'type': 'int', 'name': 'listPosition'},
+    });
+  }
+}
+```
+
+**Why this is good:**
+- ✅ Handles dynamic list content correctly
+- ✅ Includes position information for analytics context
+- ✅ Proper type conversions throughout
+- ✅ Each list item has unique properties
+- ✅ Schema defined consistently
+
+### ❌ BAD FLUTTER IMPLEMENTATION EXAMPLES
+
+#### Example 1: Type Mismatches and String Contamination
+```dart
+// BAD: Multiple type and formatting issues
+class ProductCard extends StatelessWidget {
+  final Product product;
+  
+  @override
+  Widget build(BuildContext context) {
+    return FSCustomAttributes(
+      classes: ['product-card'],
+      attributes: {
+        'data-price': '\$${product.price}', // BAD: includes $
+        'data-stock': '${product.stockLevel} items', // BAD: includes "items"
+        'data-available': product.isInStock ? 'Yes' : 'No', // BAD: uses Yes/No not bool
+        'data-rating': '${product.rating}/5 stars', // BAD: includes text
+        'data-fs-properties-schema': jsonEncode({
+          'data-price': 'str', // BAD: should be "real"
+          'data-stock': 'int', // BAD: value has text, will fail
+          'data-available': 'bool', // BAD: value is "Yes"/"No" not boolean
+          'data-rating': 'str', // BAD: should be "real"
+        }),
+      },
+      child: Card(child: Text(product.name)),
+    );
+  }
+}
+```
+
+**Why this is bad:**
+- ❌ Price includes "$" symbol but typed as string (loses ability to do numeric operations)
+- ❌ Stock includes "items" text but typed as int (will fail parsing)
+- ❌ Available uses "Yes"/"No" instead of boolean values
+- ❌ Rating includes "/5 stars" text but typed as string (loses numeric analysis)
+- ❌ No property name overrides for readability
+
+**CORRECTED VERSION:**
+```dart
+// GOOD: Clean values with proper types
+class ProductCard extends StatelessWidget {
+  final Product product;
+  
+  @override
+  Widget build(BuildContext context) {
+    return FSCustomAttributes(
+      classes: ['product-card'],
+      attributes: {
+        'data-price': product.price.toString(), // Clean numeric value
+        'data-stock': product.stockLevel.toString(), // Clean numeric value
+        'data-available': product.isInStock.toString(), // Boolean as string
+        'data-rating': product.rating.toString(), // Clean numeric value
+        'data-currency': 'USD', // Separate attribute for currency
+        'data-fs-properties-schema': jsonEncode({
+          'data-price': {'type': 'real', 'name': 'price'},
+          'data-stock': {'type': 'int', 'name': 'stockLevel'},
+          'data-available': {'type': 'bool', 'name': 'isAvailable'},
+          'data-rating': {'type': 'real', 'name': 'rating'},
+          'data-currency': {'type': 'str', 'name': 'currency'},
+        }),
+      },
+      child: Card(child: Text(product.name)),
+    );
+  }
+}
+```
+
+#### Example 2: Forgetting to Convert Numbers
+```dart
+// BAD: Not converting primitive types to String
+class ProductCard extends StatelessWidget {
+  final int quantity;
+  final double price;
+  final bool available;
+  
+  @override
+  Widget build(BuildContext context) {
+    return FSCustomAttributes(
+      attributes: {
+        'data-quantity': quantity, // ERROR: expects String
+        'data-price': price, // ERROR: expects String
+        'data-available': available, // ERROR: expects String
+      },
+      child: Card(),
+    );
+  }
+}
+```
+
+**Why this is bad:**
+- ❌ `attributes` map expects String values
+- ❌ Type errors at compile time
+- ❌ Won't work at all
+
+**CORRECTED VERSION:**
+```dart
+// GOOD: Proper type conversion to String
+class ProductCard extends StatelessWidget {
+  final int quantity;
+  final double price;
+  final bool available;
+  
+  @override
+  Widget build(BuildContext context) {
+    return FSCustomAttributes(
+      attributes: {
+        'data-quantity': quantity.toString(),
+        'data-price': price.toString(),
+        'data-available': available.toString(),
+        'data-fs-properties-schema': jsonEncode({
+          'data-quantity': {'type': 'int', 'name': 'quantity'},
+          'data-price': {'type': 'real', 'name': 'price'},
+          'data-available': {'type': 'bool', 'name': 'isAvailable'},
+        }),
+      },
+      child: Card(),
+    );
+  }
+}
+```
+
+#### Example 3: Manual JSON String Construction
+```dart
+// BAD: Manually building JSON strings
+class ProductCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FSCustomAttributes(
+      attributes: {
+        'data-fs-properties-schema': '''
+        {
+          "data-price": {
+            "type": "real",
+            "name": "price"
+          }
+        }
+        ''', // BAD: Manual JSON string
+      },
+      child: Card(),
+    );
+  }
+}
+```
+
+**Why this is bad:**
+- ❌ Manual JSON string is error-prone
+- ❌ Easy to make syntax errors (quotes, commas, brackets)
+- ❌ No compile-time checking
+- ❌ Hard to maintain
+
+**CORRECTED VERSION:**
+```dart
+// GOOD: Using jsonEncode for safe JSON construction
+import 'dart:convert';
+
+class ProductCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FSCustomAttributes(
+      attributes: {
+        'data-price': '99.99',
+        'data-fs-properties-schema': jsonEncode({
+          'data-price': {
+            'type': 'real',
+            'name': 'price',
+          },
+        }), // GOOD: Type-safe JSON encoding
+      },
+      child: Card(),
+    );
+  }
+}
+```
+
+---
+
 ## LIMITS AND CONSTRAINTS
 
 ### Global Limits
